@@ -915,17 +915,16 @@ public sealed class MenuManager
         var end = Math.Min(options.Count, start + visibleItems);
 
         var title = GetTitle(state);
-        var textSizeClass = GetTextSizeClass();
         var lines = new List<string>
         {
             state.View == MenuView.Main
-                ? $"<b><font class='{textSizeClass}' color='#f0b65a'>{WebUtility.HtmlEncode(BilingualText.Truncate(title, MaxTitleWidth))}</font></b>"
-                : $"<b><font class='{textSizeClass}' color='#8bdcff'>{WebUtility.HtmlEncode(BilingualText.Truncate(title, MaxTitleWidth))}</font></b> <font class='{textSizeClass}' color='#d7f08a'>{state.Cursor + 1}</font>/<font class='{textSizeClass}' color='#e2e2e2'>{Math.Max(1, options.Count)}</font>",
+                ? $"<b><font color='#f0b65a'>{WebUtility.HtmlEncode(BilingualText.Truncate(title, MaxTitleWidth))}</font></b>"
+                : $"<b><font color='#8bdcff'>{WebUtility.HtmlEncode(BilingualText.Truncate(title, MaxTitleWidth))}</font></b> <font color='#d7f08a'>{state.Cursor + 1}</font>/<font color='#e2e2e2'>{Math.Max(1, options.Count)}</font>",
         };
 
         if (options.Count == 0)
         {
-            lines.Add($"<font class='{textSizeClass}' color='#ffb3b3'>{WebUtility.HtmlEncode(_text.Get("menu.no_entries"))}</font>");
+            lines.Add($"<font color='#ffb3b3'>{WebUtility.HtmlEncode(_text.Get("menu.no_entries"))}</font>");
         }
         else
         {
@@ -936,25 +935,14 @@ public sealed class MenuManager
                 var selected = option.IsSelected ? " *" : string.Empty;
                 var color = index == state.Cursor ? "#f7d774" : "#ffffff";
                 var labelBudget = MaxItemLabelWidth - BilingualText.DisplayWidth(prefix) - BilingualText.DisplayWidth(selected);
-                lines.Add($"<font class='{textSizeClass}' color='{color}'>{prefix}{WebUtility.HtmlEncode(BilingualText.Truncate(option.Label, labelBudget))}{selected}</font>");
+                lines.Add($"<font color='{color}'>{prefix}{WebUtility.HtmlEncode(BilingualText.Truncate(option.Label, labelBudget))}{selected}</font>");
             }
         }
 
         lines.Add(state.View == MenuView.Main
-            ? "<font class='fontSize-s' color='#f0b65a'>W/S | E | R</font>"
-            : "<font class='fontSize-s' color='#f0b65a'>W/S | E | Shift | R</font>");
+            ? "<small><small><font color='#f0b65a'>W/S | E | R</font></small></small>"
+            : "<small><small><font color='#f0b65a'>W/S | E | Shift | R</font></small></small>");
         SafePrint(player, string.Join("<br>", lines));
-    }
-
-    private string GetTextSizeClass()
-    {
-        return _config.Menu.TextSize.Trim().ToLowerInvariant() switch
-        {
-            "small" => "fontSize-s",
-            "small-medium" => "fontSize-sm",
-            "large" => "fontSize-l",
-            _ => "fontSize-m"
-        };
     }
 
     private string GetTitle(PlayerMenuState state)

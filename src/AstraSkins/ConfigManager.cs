@@ -75,14 +75,6 @@ public sealed class ConfigManager
             config.MySql.SslMode = sslMode;
         }
 
-        var textSize = config.Menu.TextSize?.Trim().ToLowerInvariant();
-        if (textSize is not ("small" or "small-medium" or "medium" or "large"))
-        {
-            throw new InvalidOperationException("Menu.TextSize must be one of: small, small-medium, medium, large.");
-        }
-
-        config.Menu.TextSize = textSize;
-
         if (config.Menu.ItemsPerPage is < 3 or > 7)
         {
             throw new InvalidOperationException("Menu.ItemsPerPage must be between 3 and 7.");

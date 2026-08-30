@@ -165,7 +165,6 @@ If `data/music_kits.json` is missing, the category simply stays hidden.
     "SslMode": "required"
   },
   "Menu": {
-    "TextSize": "small-medium",
     "ItemsPerPage": 5,
     "TimeoutSeconds": 25,
     "CooldownMilliseconds": 180,
@@ -196,7 +195,6 @@ If `data/music_kits.json` is missing, the category simply stays hidden.
 | Key | What it does |
 | --- | --- |
 | `DatabaseMode` | `"sqlite"` or `"mysql"` — required, validated at startup |
-| `Menu.TextSize` | Menu size: `small`, `small-medium`, `medium`, or `large` |
 | `Menu.ItemsPerPage` | Visible menu rows (3–7) |
 | `Menu.TimeoutSeconds` | Menu auto-closes after this many idle seconds |
 | `Menu.CooldownMilliseconds` | Minimum delay between menu key presses |

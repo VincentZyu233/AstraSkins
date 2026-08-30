@@ -165,7 +165,6 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
     "SslMode": "required"
   },
   "Menu": {
-    "TextSize": "small-medium",
     "ItemsPerPage": 5,
     "TimeoutSeconds": 25,
     "CooldownMilliseconds": 180,
@@ -196,7 +195,6 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
 | 配置项 | 作用 |
 | --- | --- |
 | `DatabaseMode` | `"sqlite"` 或 `"mysql"` — 必填，启动时验证 |
-| `Menu.TextSize` | 菜单字号：`small`、`small-medium`、`medium` 或 `large` |
 | `Menu.ItemsPerPage` | 可见菜单行数（3–7） |
 | `Menu.TimeoutSeconds` | 菜单空闲多少秒后自动关闭 |
 | `Menu.CooldownMilliseconds` | 菜单按键之间的最短延迟 |
