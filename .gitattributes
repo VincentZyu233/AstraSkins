@@ -1,5 +1,8 @@
 * text=auto eol=lf
 
+# Include documentation, including README.md, in GitHub Linguist language statistics.
+*.md linguist-detectable=true
+
 *.dll binary
 *.so binary
 *.pdb binary

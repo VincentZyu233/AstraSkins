@@ -23,6 +23,9 @@ jobs:
       - name: Build
         run: dotnet build -c Release
 
+      - name: Validate bilingual definitions
+        run: python tools/validate_bilingual.py
+
       - name: Check tag matches ModuleVersion
         if: github.ref_type == 'tag'
         run: |

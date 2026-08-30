@@ -1,9 +1,7 @@
 ﻿using System.Net;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Utils;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using AstraSkins.Models;
 
@@ -13,7 +11,7 @@ public sealed class MenuManager
 {
     private readonly SkinManager _skinManager;
     private readonly PluginConfig _config;
-    private readonly IStringLocalizer _localizer;
+    private readonly BilingualText _text;
     private readonly ILogger _logger;
     private readonly Dictionary<int, PlayerMenuState> _states = new();
     private readonly Dictionary<int, float> _savedVelocity = new();
@@ -23,11 +21,11 @@ public sealed class MenuManager
     private const int MaxItemLabelLength = 34;
     private const int MaxSearchResults = 64;
 
-    public MenuManager(SkinManager skinManager, PluginConfig config, IStringLocalizer localizer, ILogger logger)
+    public MenuManager(SkinManager skinManager, PluginConfig config, BilingualText text, ILogger logger)
     {
         _skinManager = skinManager;
         _config = config;
-        _localizer = localizer;
+        _text = text;
         _logger = logger;
     }
 
@@ -286,7 +284,7 @@ public sealed class MenuManager
 
         var options = new List<MenuOption>();
         var visualIndex = 1;
-        options.Add(new MenuOption($"{visualIndex++}. {_localizer.ForPlayer(player, "menu.configure_all")}", () =>
+        options.Add(new MenuOption($"{visualIndex++}. {_text.Get("menu.configure_all")}", () =>
         {
             var current = Utilities.GetPlayerFromSlot(state.Slot);
             if (current is null) return;
@@ -295,7 +293,7 @@ public sealed class MenuManager
 
         foreach (var weapon in _skinManager.GetOwnedWeaponDefinitions(player))
         {
-            var label = $"{visualIndex++}. {weapon.DisplayName}";
+            var label = $"{visualIndex++}. {BilingualText.Name(weapon.DisplayNameZh, weapon.DisplayName)}";
             options.Add(new MenuOption(label, () =>
             {
                 var current = Utilities.GetPlayerFromSlot(state.Slot);
@@ -306,7 +304,7 @@ public sealed class MenuManager
         }
 
         var knife = _skinManager.GetCurrentKnifeDefinition(player);
-        var knifeLabel = knife is null ? _localizer.ForPlayer(player, "menu.knife") : $"* {knife.DisplayName}";
+        var knifeLabel = knife is null ? _text.Get("menu.knife") : $"* {BilingualText.Name(knife.DisplayNameZh, knife.DisplayName)}";
         options.Add(new MenuOption($"{visualIndex++}. {knifeLabel}", () =>
         {
             var current = Utilities.GetPlayerFromSlot(state.Slot);
@@ -321,13 +319,13 @@ public sealed class MenuManager
             ChangeView(current, state, MenuView.KnifeSkins, push: true);
         }));
 
-        options.Add(new MenuOption($"{visualIndex++}. {_localizer.ForPlayer(player, "menu.gloves")}", () =>
+        options.Add(new MenuOption($"{visualIndex++}. {_text.Get("menu.gloves")}", () =>
         {
             var current = Utilities.GetPlayerFromSlot(state.Slot);
             if (current is not null) ChangeView(current, state, MenuView.GloveTypes, push: true);
         }));
 
-        options.Add(new MenuOption($"{visualIndex++}. {_localizer.ForPlayer(player, "menu.agents")}", () =>
+        options.Add(new MenuOption($"{visualIndex++}. {_text.Get("menu.agents")}", () =>
         {
             var current = Utilities.GetPlayerFromSlot(state.Slot);
             if (current is not null) ChangeView(current, state, MenuView.AgentTeams, push: true);
@@ -385,7 +383,6 @@ public sealed class MenuManager
 
     private IReadOnlyList<MenuOption> BuildCategoryOptions(PlayerMenuState state)
     {
-        var menuPlayer = Utilities.GetPlayerFromSlot(state.Slot);
         var options = new List<MenuOption>();
         var categories = _skinManager.Catalog.Categories.Count > 0
             ? _skinManager.Catalog.Categories
@@ -398,7 +395,7 @@ public sealed class MenuManager
                 continue;
             }
 
-            options.Add(new MenuOption(category.DisplayName, () =>
+            options.Add(new MenuOption(BilingualText.Name(category.DisplayNameZh, category.DisplayName), () =>
             {
                 var player = Utilities.GetPlayerFromSlot(state.Slot);
                 if (player is null) return;
@@ -407,17 +404,17 @@ public sealed class MenuManager
             }));
         }
 
-        options.Add(new MenuOption(_localizer.ForPlayer(menuPlayer, "menu.knives"), () =>
+        options.Add(new MenuOption(_text.Get("menu.knives"), () =>
         {
             var player = Utilities.GetPlayerFromSlot(state.Slot);
             if (player is not null) OpenKnives(player);
         }));
-        options.Add(new MenuOption(_localizer.ForPlayer(menuPlayer, "menu.gloves"), () =>
+        options.Add(new MenuOption(_text.Get("menu.gloves"), () =>
         {
             var player = Utilities.GetPlayerFromSlot(state.Slot);
             if (player is not null) ChangeView(player, state, MenuView.GloveTypes, push: true);
         }));
-        options.Add(new MenuOption(_localizer.ForPlayer(menuPlayer, "menu.agents"), () =>
+        options.Add(new MenuOption(_text.Get("menu.agents"), () =>
         {
             var player = Utilities.GetPlayerFromSlot(state.Slot);
             if (player is not null) ChangeView(player, state, MenuView.AgentTeams, push: true);
@@ -429,7 +426,7 @@ public sealed class MenuManager
     {
         return _skinManager.Catalog.Weapons
             .Where(w => state.CategoryId is null || w.Category.Equals(state.CategoryId, StringComparison.OrdinalIgnoreCase))
-            .Select(w => new MenuOption(w.DisplayName, () =>
+            .Select(w => new MenuOption(BilingualText.Name(w.DisplayNameZh, w.DisplayName), () =>
             {
                 var player = Utilities.GetPlayerFromSlot(state.Slot);
                 if (player is null) return;
@@ -453,7 +450,7 @@ public sealed class MenuManager
 
         return state.Weapon.Skins
             .Where(s => player is null || _skinManager.CanUse(player, s))
-            .Select(s => new MenuOption(s.DisplayName, () =>
+            .Select(s => new MenuOption(BilingualText.Name(s.DisplayNameZh, s.DisplayName), () =>
             {
                 var current = Utilities.GetPlayerFromSlot(state.Slot);
                 if (current is null || state.Weapon is null) return;
@@ -469,8 +466,8 @@ public sealed class MenuManager
 
                 var saved = _skinManager.SetWeaponSkin(current, state.Weapon.EntityName, s.Id);
                 current.PrintToChat(saved
-                    ? $"{AstraSkinsPlugin.FormatPrefix()} {_localizer.ForPlayer(current, "menu.equipped", s.DisplayName)}"
-                    : $"{AstraSkinsPlugin.FormatPrefix()} {_localizer.ForPlayer(current, "menu.save_failed")}");
+                    ? $"{AstraSkinsPlugin.FormatPrefix()} {_text.Get("menu.equipped", BilingualText.Arg(s.DisplayNameZh, s.DisplayName))}"
+                    : $"{AstraSkinsPlugin.FormatPrefix()} {_text.Get("menu.save_failed")}");
                 state.LastInteractionUtc = DateTime.UtcNow;
                 Render(current, state);
             }, s.Id.Equals(selectedId, StringComparison.OrdinalIgnoreCase), ThrottleSelection: true))
@@ -485,7 +482,7 @@ public sealed class MenuManager
             : null;
         return _skinManager.Catalog.Knives
             .Where(k => player is null || _skinManager.CanUse(player, k))
-            .Select(k => new MenuOption(k.DisplayName, () =>
+            .Select(k => new MenuOption(BilingualText.Name(k.DisplayNameZh, k.DisplayName), () =>
             {
                 var current = Utilities.GetPlayerFromSlot(state.Slot);
                 if (current is null) return;
@@ -499,8 +496,8 @@ public sealed class MenuManager
                 state.Knife = k;
                 var saved = _skinManager.SetKnifeType(current, k.Id);
                 current.PrintToChat(saved
-                    ? $"{AstraSkinsPlugin.FormatPrefix()} {_localizer.ForPlayer(current, "menu.equipped", k.DisplayName)}"
-                    : $"{AstraSkinsPlugin.FormatPrefix()} {_localizer.ForPlayer(current, "menu.save_failed")}");
+                    ? $"{AstraSkinsPlugin.FormatPrefix()} {_text.Get("menu.equipped", BilingualText.Arg(k.DisplayNameZh, k.DisplayName))}"
+                    : $"{AstraSkinsPlugin.FormatPrefix()} {_text.Get("menu.save_failed")}");
                 state.LastInteractionUtc = DateTime.UtcNow;
                 Render(current, state);
             }, k.Id.Equals(selectedKnifeId, StringComparison.OrdinalIgnoreCase), ThrottleSelection: true))
@@ -518,7 +515,7 @@ public sealed class MenuManager
         var selectedId = player is not null ? _skinManager.GetProfile(player).KnifeSkinId : null;
         return state.Knife.Skins
             .Where(s => player is null || _skinManager.CanUse(player, s))
-            .Select(s => new MenuOption(s.DisplayName, () =>
+            .Select(s => new MenuOption(BilingualText.Name(s.DisplayNameZh, s.DisplayName), () =>
             {
                 var current = Utilities.GetPlayerFromSlot(state.Slot);
                 if (current is null) return;
@@ -531,8 +528,8 @@ public sealed class MenuManager
 
                 var saved = _skinManager.SetKnifeSkin(current, s.Id);
                 current.PrintToChat(saved
-                    ? $"{AstraSkinsPlugin.FormatPrefix()} {_localizer.ForPlayer(current, "menu.equipped", s.DisplayName)}"
-                    : $"{AstraSkinsPlugin.FormatPrefix()} {_localizer.ForPlayer(current, "menu.save_failed")}");
+                    ? $"{AstraSkinsPlugin.FormatPrefix()} {_text.Get("menu.equipped", BilingualText.Arg(s.DisplayNameZh, s.DisplayName))}"
+                    : $"{AstraSkinsPlugin.FormatPrefix()} {_text.Get("menu.save_failed")}");
                 state.LastInteractionUtc = DateTime.UtcNow;
                 Render(current, state);
             }, s.Id.Equals(selectedId, StringComparison.OrdinalIgnoreCase), ThrottleSelection: true))
@@ -544,7 +541,7 @@ public sealed class MenuManager
         var player = Utilities.GetPlayerFromSlot(state.Slot);
         return _skinManager.Catalog.Gloves
             .Where(g => player is null || _skinManager.CanUse(player, g))
-            .Select(g => new MenuOption(g.DisplayName, () =>
+            .Select(g => new MenuOption(BilingualText.Name(g.DisplayNameZh, g.DisplayName), () =>
             {
                 var current = Utilities.GetPlayerFromSlot(state.Slot);
                 if (current is null) return;
@@ -565,7 +562,7 @@ public sealed class MenuManager
         var selectedId = player is not null ? _skinManager.GetProfile(player).GloveSkinId : null;
         return state.Glove.Skins
             .Where(s => player is null || _skinManager.CanUse(player, s))
-            .Select(s => new MenuOption(s.DisplayName, () =>
+            .Select(s => new MenuOption(BilingualText.Name(s.DisplayNameZh, s.DisplayName), () =>
             {
                 var current = Utilities.GetPlayerFromSlot(state.Slot);
                 if (current is null) return;
@@ -578,8 +575,8 @@ public sealed class MenuManager
 
                 var saved = _skinManager.SetGloveSkin(current, s.Id);
                 current.PrintToChat(saved
-                    ? $"{AstraSkinsPlugin.FormatPrefix()} {_localizer.ForPlayer(current, "menu.equipped", s.DisplayName)}"
-                    : $"{AstraSkinsPlugin.FormatPrefix()} {_localizer.ForPlayer(current, "menu.save_failed")}");
+                    ? $"{AstraSkinsPlugin.FormatPrefix()} {_text.Get("menu.equipped", BilingualText.Arg(s.DisplayNameZh, s.DisplayName))}"
+                    : $"{AstraSkinsPlugin.FormatPrefix()} {_text.Get("menu.save_failed")}");
                 state.LastInteractionUtc = DateTime.UtcNow;
                 Render(current, state);
             }, s.Id.Equals(selectedId, StringComparison.OrdinalIgnoreCase), ThrottleSelection: true))
@@ -588,11 +585,10 @@ public sealed class MenuManager
 
     private IReadOnlyList<MenuOption> BuildAgentTeamOptions(PlayerMenuState state)
     {
-        var menuPlayer = Utilities.GetPlayerFromSlot(state.Slot);
         var options = new List<MenuOption>();
         if (_skinManager.Catalog.Agents.Any(a => a.Team.Equals("t", StringComparison.OrdinalIgnoreCase)))
         {
-            options.Add(new MenuOption(_localizer.ForPlayer(menuPlayer, "menu.t_agents"), () =>
+            options.Add(new MenuOption(_text.Get("menu.t_agents"), () =>
             {
                 var player = Utilities.GetPlayerFromSlot(state.Slot);
                 if (player is null) return;
@@ -603,7 +599,7 @@ public sealed class MenuManager
 
         if (_skinManager.Catalog.Agents.Any(a => a.Team.Equals("ct", StringComparison.OrdinalIgnoreCase)))
         {
-            options.Add(new MenuOption(_localizer.ForPlayer(menuPlayer, "menu.ct_agents"), () =>
+            options.Add(new MenuOption(_text.Get("menu.ct_agents"), () =>
             {
                 var player = Utilities.GetPlayerFromSlot(state.Slot);
                 if (player is null) return;
@@ -630,7 +626,7 @@ public sealed class MenuManager
         return _skinManager.Catalog.Agents
             .Where(a => a.Team.Equals(state.AgentTeam, StringComparison.OrdinalIgnoreCase))
             .Where(a => player is null || _skinManager.CanUse(player, a))
-            .Select(a => new MenuOption(a.DisplayName, () =>
+            .Select(a => new MenuOption(BilingualText.Name(a.DisplayNameZh, a.DisplayName), () =>
             {
                 var current = Utilities.GetPlayerFromSlot(state.Slot);
                 if (current is null || state.AgentTeam is null) return;
@@ -643,8 +639,8 @@ public sealed class MenuManager
 
                 var saved = _skinManager.SetAgent(current, state.AgentTeam, a.Id);
                 current.PrintToChat(saved
-                    ? $"{AstraSkinsPlugin.FormatPrefix()} {_localizer.ForPlayer(current, "menu.equipped", a.DisplayName)}"
-                    : $"{AstraSkinsPlugin.FormatPrefix()} {_localizer.ForPlayer(current, "menu.save_failed")}");
+                    ? $"{AstraSkinsPlugin.FormatPrefix()} {_text.Get("menu.equipped", BilingualText.Arg(a.DisplayNameZh, a.DisplayName))}"
+                    : $"{AstraSkinsPlugin.FormatPrefix()} {_text.Get("menu.save_failed")}");
                 state.LastInteractionUtc = DateTime.UtcNow;
                 Render(current, state);
             }, a.Id.Equals(selectedId, StringComparison.OrdinalIgnoreCase), ThrottleSelection: true))
@@ -671,8 +667,9 @@ public sealed class MenuManager
         var catalog = _skinManager.Catalog;
         var options = new List<MenuOption>();
 
-        void Add(string label, bool selected, Func<CCSPlayerController, bool> apply)
+        void Add(string chineseLabel, string englishLabel, bool selected, Func<CCSPlayerController, bool> apply)
         {
+            var label = BilingualText.Combine(chineseLabel, englishLabel);
             options.Add(new MenuOption(label, () =>
             {
                 var current = Utilities.GetPlayerFromSlot(state.Slot);
@@ -683,8 +680,8 @@ public sealed class MenuManager
 
                 var saved = apply(current);
                 current.PrintToChat(saved
-                    ? $"{AstraSkinsPlugin.FormatPrefix()} {_localizer.ForPlayer(current, "menu.equipped", label)}"
-                    : $"{AstraSkinsPlugin.FormatPrefix()} {_localizer.ForPlayer(current, "menu.save_failed")}");
+                    ? $"{AstraSkinsPlugin.FormatPrefix()} {_text.Get("menu.equipped", new BilingualText.Argument(chineseLabel, englishLabel))}"
+                    : $"{AstraSkinsPlugin.FormatPrefix()} {_text.Get("menu.save_failed")}");
                 state.LastInteractionUtc = DateTime.UtcNow;
                 Render(current, state);
             }, selected, ThrottleSelection: true));
@@ -699,8 +696,9 @@ public sealed class MenuManager
                     return options;
                 }
 
-                var label = $"{weapon.DisplayName} | {skin.DisplayName}";
-                if (!MatchesAllTerms(label, terms) || !_skinManager.CanUse(player, skin))
+                var englishLabel = $"{weapon.DisplayName} | {skin.DisplayName}";
+                var chineseLabel = $"{BilingualText.Arg(weapon.DisplayNameZh, weapon.DisplayName).Zh} | {BilingualText.Arg(skin.DisplayNameZh, skin.DisplayName).Zh}";
+                if (!MatchesAllTerms($"{chineseLabel} {englishLabel}", terms) || !_skinManager.CanUse(player, skin))
                 {
                     continue;
                 }
@@ -709,7 +707,7 @@ public sealed class MenuManager
                 var skinId = skin.Id;
                 var selected = profile.WeaponSkins.TryGetValue(entity, out var equipped) &&
                                equipped.Equals(skinId, StringComparison.OrdinalIgnoreCase);
-                Add(label, selected, current => _skinManager.SetWeaponSkin(current, entity, skinId));
+                Add(chineseLabel, englishLabel, selected, current => _skinManager.SetWeaponSkin(current, entity, skinId));
             }
         }
 
@@ -727,15 +725,16 @@ public sealed class MenuManager
                     return options;
                 }
 
-                var label = $"{knife.DisplayName} | {skin.DisplayName}";
-                if (!MatchesAllTerms(label, terms) || !_skinManager.CanUse(player, skin))
+                var englishLabel = $"{knife.DisplayName} | {skin.DisplayName}";
+                var chineseLabel = $"{BilingualText.Arg(knife.DisplayNameZh, knife.DisplayName).Zh} | {BilingualText.Arg(skin.DisplayNameZh, skin.DisplayName).Zh}";
+                if (!MatchesAllTerms($"{chineseLabel} {englishLabel}", terms) || !_skinManager.CanUse(player, skin))
                 {
                     continue;
                 }
 
                 var skinId = skin.Id;
                 var selected = skinId.Equals(profile.KnifeSkinId, StringComparison.OrdinalIgnoreCase);
-                Add(label, selected, current => _skinManager.SetKnifeSkin(current, skinId));
+                Add(chineseLabel, englishLabel, selected, current => _skinManager.SetKnifeSkin(current, skinId));
             }
         }
 
@@ -753,15 +752,16 @@ public sealed class MenuManager
                     return options;
                 }
 
-                var label = $"{glove.DisplayName} | {skin.DisplayName}";
-                if (!MatchesAllTerms(label, terms) || !_skinManager.CanUse(player, skin))
+                var englishLabel = $"{glove.DisplayName} | {skin.DisplayName}";
+                var chineseLabel = $"{BilingualText.Arg(glove.DisplayNameZh, glove.DisplayName).Zh} | {BilingualText.Arg(skin.DisplayNameZh, skin.DisplayName).Zh}";
+                if (!MatchesAllTerms($"{chineseLabel} {englishLabel}", terms) || !_skinManager.CanUse(player, skin))
                 {
                     continue;
                 }
 
                 var skinId = skin.Id;
                 var selected = skinId.Equals(profile.GloveSkinId, StringComparison.OrdinalIgnoreCase);
-                Add(label, selected, current => _skinManager.SetGloveSkin(current, skinId));
+                Add(chineseLabel, englishLabel, selected, current => _skinManager.SetGloveSkin(current, skinId));
             }
         }
 
@@ -772,8 +772,9 @@ public sealed class MenuManager
                 return options;
             }
 
-            var label = $"{agent.Team.ToUpperInvariant()} | {agent.DisplayName}";
-            if (!MatchesAllTerms(label, terms) || !_skinManager.CanUse(player, agent))
+            var englishLabel = $"{agent.Team.ToUpperInvariant()} | {agent.DisplayName}";
+            var chineseLabel = $"{agent.Team.ToUpperInvariant()} | {BilingualText.Arg(agent.DisplayNameZh, agent.DisplayName).Zh}";
+            if (!MatchesAllTerms($"{chineseLabel} {englishLabel}", terms) || !_skinManager.CanUse(player, agent))
             {
                 continue;
             }
@@ -782,7 +783,7 @@ public sealed class MenuManager
             var team = agent.Team;
             var selected = profile.AgentIdsByTeam.TryGetValue(team, out var equippedAgent) &&
                            equippedAgent.Equals(agentId, StringComparison.OrdinalIgnoreCase);
-            Add(label, selected, current => _skinManager.SetAgent(current, team, agentId));
+            Add(chineseLabel, englishLabel, selected, current => _skinManager.SetAgent(current, team, agentId));
         }
 
         return options;
@@ -819,17 +820,17 @@ public sealed class MenuManager
 
         var end = Math.Min(options.Count, start + visibleItems);
 
-        var title = GetTitle(player, state);
+        var title = GetTitle(state);
         var lines = new List<string>
         {
             state.View == MenuView.Main
-                ? $"<b><font color='#f0b65a'>{WebUtility.HtmlEncode(TrimForOverlay(title, MaxTitleLength))}</font></b>"
-                : $"<b><font color='#8bdcff'>{WebUtility.HtmlEncode(TrimForOverlay(title, MaxTitleLength))}</font></b> <font color='#d7f08a'>{state.Cursor + 1}</font>/<font color='#e2e2e2'>{Math.Max(1, options.Count)}</font>",
+                ? $"<b><font color='#f0b65a'>{WebUtility.HtmlEncode(BilingualText.Truncate(title, MaxTitleLength))}</font></b>"
+                : $"<b><font color='#8bdcff'>{WebUtility.HtmlEncode(BilingualText.Truncate(title, MaxTitleLength))}</font></b> <font color='#d7f08a'>{state.Cursor + 1}</font>/<font color='#e2e2e2'>{Math.Max(1, options.Count)}</font>",
         };
 
         if (options.Count == 0)
         {
-            lines.Add($"<font color='#ffb3b3'>{WebUtility.HtmlEncode(_localizer.ForPlayer(player, "menu.no_entries"))}</font>");
+            lines.Add($"<font color='#ffb3b3'>{WebUtility.HtmlEncode(_text.Get("menu.no_entries"))}</font>");
         }
         else
         {
@@ -839,7 +840,7 @@ public sealed class MenuManager
                 var prefix = index == state.Cursor ? "> " : string.Empty;
                 var selected = option.IsSelected ? " *" : string.Empty;
                 var color = index == state.Cursor ? "#f7d774" : "#ffffff";
-                lines.Add($"<font color='{color}'>{prefix}{WebUtility.HtmlEncode(TrimForOverlay(option.Label, MaxItemLabelLength))}{selected}</font>");
+                lines.Add($"<font color='{color}'>{prefix}{WebUtility.HtmlEncode(BilingualText.Truncate(option.Label, MaxItemLabelLength))}{selected}</font>");
             }
         }
 
@@ -849,23 +850,23 @@ public sealed class MenuManager
         SafePrint(player, string.Join("<br>", lines));
     }
 
-    private string GetTitle(CCSPlayerController player, PlayerMenuState state)
+    private string GetTitle(PlayerMenuState state)
     {
         return state.View switch
         {
             MenuView.Main => "Astra Skins",
             MenuView.Categories => "Astra Skins",
-            MenuView.Weapons => _localizer.ForPlayer(player, "menu.title.weapons"),
-            MenuView.WeaponSkins => state.Weapon?.DisplayName ?? _localizer.ForPlayer(player, "menu.title.weapon_skins"),
-            MenuView.KnifeTypes => _localizer.ForPlayer(player, "menu.title.knives"),
-            MenuView.KnifeSkins => state.Knife?.DisplayName ?? _localizer.ForPlayer(player, "menu.title.knife_skins"),
-            MenuView.GloveTypes => _localizer.ForPlayer(player, "menu.title.gloves"),
-            MenuView.GloveSkins => state.Glove?.DisplayName ?? _localizer.ForPlayer(player, "menu.title.glove_skins"),
-            MenuView.AgentTeams => _localizer.ForPlayer(player, "menu.title.agent_teams"),
-            MenuView.Search => _localizer.ForPlayer(player, "menu.title.search", state.SearchQuery ?? string.Empty),
+            MenuView.Weapons => _text.Get("menu.title.weapons"),
+            MenuView.WeaponSkins => state.Weapon is null ? _text.Get("menu.title.weapon_skins") : BilingualText.Name(state.Weapon.DisplayNameZh, state.Weapon.DisplayName),
+            MenuView.KnifeTypes => _text.Get("menu.title.knives"),
+            MenuView.KnifeSkins => state.Knife is null ? _text.Get("menu.title.knife_skins") : BilingualText.Name(state.Knife.DisplayNameZh, state.Knife.DisplayName),
+            MenuView.GloveTypes => _text.Get("menu.title.gloves"),
+            MenuView.GloveSkins => state.Glove is null ? _text.Get("menu.title.glove_skins") : BilingualText.Name(state.Glove.DisplayNameZh, state.Glove.DisplayName),
+            MenuView.AgentTeams => _text.Get("menu.title.agent_teams"),
+            MenuView.Search => _text.Get("menu.title.search", state.SearchQuery ?? string.Empty),
             MenuView.Agents => state.AgentTeam == "ct"
-                ? _localizer.ForPlayer(player, "menu.title.agents_ct")
-                : _localizer.ForPlayer(player, "menu.title.agents_t"),
+                ? _text.Get("menu.title.agents_ct")
+                : _text.Get("menu.title.agents_t"),
             _ => "Astra Skins"
         };
     }
@@ -937,13 +938,4 @@ public sealed class MenuManager
         }
     }
 
-    private static string TrimForOverlay(string text, int maxLength)
-    {
-        if (string.IsNullOrWhiteSpace(text) || text.Length <= maxLength)
-        {
-            return text;
-        }
-
-        return $"{text[..Math.Max(0, maxLength - 3)]}...";
-    }
 }

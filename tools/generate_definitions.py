@@ -10,6 +10,8 @@ ITEMS_GAME_URL = "https://raw.githubusercontent.com/SteamDatabase/GameTracking-C
 CSGO_ENGLISH_URL = "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CS2/master/game/csgo/pak01_dir/resource/csgo_english.txt"
 SKINS_API_URL = "https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en/skins.json"
 AGENTS_API_URL = "https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en/agents.json"
+SKINS_API_ZH_URL = "https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/zh-CN/skins.json"
+AGENTS_API_ZH_URL = "https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/zh-CN/agents.json"
 
 WEAPON_DISPLAY = {
     "weapon_ak47": ("rifles", "AK-47"),
@@ -49,10 +51,10 @@ WEAPON_DISPLAY = {
 }
 
 CATEGORIES = [
-    {"id": "pistols", "displayName": "Pistols", "order": 10, "enabled": True},
-    {"id": "smgs", "displayName": "SMGs", "order": 20, "enabled": True},
-    {"id": "rifles", "displayName": "Rifles", "order": 30, "enabled": True},
-    {"id": "heavy", "displayName": "Heavy", "order": 40, "enabled": True},
+    {"id": "pistols", "displayName": "Pistols", "displayNameZh": "手枪", "order": 10, "enabled": True},
+    {"id": "smgs", "displayName": "SMGs", "displayNameZh": "冲锋枪", "order": 20, "enabled": True},
+    {"id": "rifles", "displayName": "Rifles", "displayNameZh": "步枪", "order": 30, "enabled": True},
+    {"id": "heavy", "displayName": "Heavy", "displayNameZh": "重型武器", "order": 40, "enabled": True},
 ]
 
 
@@ -93,7 +95,8 @@ class VdfParser:
         self.index += 1
         if token in "{}":
             return None
-        return bytes(token[1:-1], "utf-8").decode("unicode_escape")
+        escapes = {"n": "\n", "r": "\r", "t": "\t", '"': '"', "\\": "\\"}
+        return re.sub(r"\\(.)", lambda match: escapes.get(match.group(1), match.group(1)), token[1:-1])
 
     @staticmethod
     def _merge(previous, value):
@@ -554,6 +557,98 @@ def glove_family_for_paint(paint):
     return None
 
 
+def with_display_name_zh(entry, display_name_zh):
+    """Insert the Chinese name next to displayName while retaining every other field."""
+    result = {}
+    chinese = str(display_name_zh or entry.get("displayName") or "").strip()
+    for key, value in entry.items():
+        if key == "displayNameZh":
+            continue
+        result[key] = value
+        if key == "displayName":
+            result["displayNameZh"] = chinese
+    if "displayNameZh" not in result:
+        result["displayNameZh"] = chinese
+    return result
+
+
+def schema_chinese_names(root, translations_zh):
+    item_names = {}
+    for item in collect_items(root).values():
+        if not isinstance(item, dict) or not item.get("name"):
+            continue
+        item_names[str(item["name"])] = localize(item.get("item_name", item["name"]), translations_zh)
+
+    paint_names = {}
+    for paint_id, paint in as_dict(root.get("paint_kits", {})).items():
+        if paint_id.isdigit() and isinstance(paint, dict):
+            paint_names[int(paint_id)] = localize(
+                paint.get("description_tag", paint.get("name", paint_id)), translations_zh
+            )
+    return item_names, paint_names
+
+
+def enrich_bilingual(weapons, knives, gloves, agents, api_skins_zh, api_agents_zh, root=None, translations_zh=None):
+    skin_names = {}
+    item_names = {}
+    for skin in api_skins_zh or []:
+        weapon = skin.get("weapon", {})
+        entity = weapon.get("id")
+        paint_index = skin.get("paint_index")
+        if not entity or paint_index is None:
+            continue
+        pattern = skin.get("pattern", {})
+        display = pattern.get("name") or str(skin.get("name", "")).split("|")[-1].strip()
+        if display:
+            skin_names[(str(entity), int(paint_index))] = str(display)
+        if weapon.get("name"):
+            item_names[str(entity)] = str(weapon["name"])
+
+    schema_items, schema_paints = ({}, {})
+    if root is not None and translations_zh:
+        schema_items, schema_paints = schema_chinese_names(root, translations_zh)
+
+    def enrich_containers(containers, identity_key):
+        for index, container in enumerate(containers):
+            identity = str(container.get(identity_key, ""))
+            chinese = item_names.get(identity) or schema_items.get(identity) or container.get("displayName")
+            enriched = with_display_name_zh(container, chinese)
+            enriched["skins"] = [
+                with_display_name_zh(
+                    skin,
+                    "原版" if int(skin.get("paintKit", -1)) == 0 and skin.get("displayName") == "Vanilla"
+                    else skin_names.get((identity, int(skin.get("paintKit", -1))))
+                    or schema_paints.get(int(skin.get("paintKit", -1)))
+                    or skin.get("displayName"),
+                )
+                for skin in container.get("skins", [])
+            ]
+            containers[index] = enriched
+
+    enrich_containers(weapons, "entityName")
+    enrich_containers(knives, "id")
+    enrich_containers(gloves, "id")
+
+    agent_names = {
+        str(agent.get("id")): str(agent.get("name", "")).split("|", 1)[0].strip()
+        for agent in api_agents_zh or []
+        if agent.get("id") and agent.get("name")
+    }
+    for index, agent in enumerate(agents):
+        agents[index] = with_display_name_zh(
+            agent, agent_names.get(str(agent.get("id"))) or agent.get("displayName")
+        )
+
+
+def load_existing_definitions(output):
+    names = ("weapons", "knives", "gloves", "agents")
+    result = []
+    for name in names:
+        path = output / f"{name}.json"
+        result.append(json.loads(path.read_text(encoding="utf-8")))
+    return result
+
+
 def write_json(path, data):
     path.parent.mkdir(parents=True, exist_ok=True)
     # newline="\n" keeps the output byte-identical across platforms; without it
@@ -576,21 +671,61 @@ def main():
     parser = argparse.ArgumentParser(description="Generate WeaponSkins JSON definitions from CS2 item schema data.")
     parser.add_argument("--items-game", default=ITEMS_GAME_URL)
     parser.add_argument("--language", default=CSGO_ENGLISH_URL)
+    parser.add_argument(
+        "--language-zh",
+        default="",
+        help="Optional local Valve csgo_schinese.txt used as a fallback for zh-CN API names.",
+    )
     parser.add_argument("--skins-api", default=SKINS_API_URL)
     parser.add_argument("--agents-api", default=AGENTS_API_URL)
+    parser.add_argument("--skins-api-zh", default=SKINS_API_ZH_URL)
+    parser.add_argument("--agents-api-zh", default=AGENTS_API_ZH_URL)
     parser.add_argument("--output", default="data")
+    parser.add_argument(
+        "--merge-existing",
+        action="store_true",
+        help="Only merge displayNameZh into current JSON; preserve all stable English data and identifiers.",
+    )
     args = parser.parse_args()
+
+    output = Path(args.output)
+    api_skins_zh = json.loads(load_text(args.skins_api_zh)) if args.skins_api_zh else None
+    api_agents_zh = json.loads(load_text(args.agents_api_zh)) if args.agents_api_zh else None
+
+    if args.merge_existing:
+        weapons, knives, gloves, agents = load_existing_definitions(output)
+        enrich_bilingual(weapons, knives, gloves, agents, api_skins_zh, api_agents_zh)
+        write_json(output / "weapons.json", weapons)
+        write_json(output / "knives.json", knives)
+        write_json(output / "gloves.json", gloves)
+        write_json(output / "agents.json", agents)
+        write_json(output / "categories.json", CATEGORIES)
+        print(
+            f"Merged Chinese names into {len(weapons)} weapons, {len(knives)} knives, "
+            f"{len(gloves)} gloves, and {len(agents)} agents in {output}"
+        )
+        return 0
 
     root = find_items_root(VdfParser(load_text(args.items_game)).parse())
     translations = parse_translations(load_text(args.language))
+    translations_zh = parse_translations(load_text(args.language_zh)) if args.language_zh else {}
     api_skins = json.loads(load_text(args.skins_api)) if args.skins_api else None
     api_agents = json.loads(load_text(args.agents_api)) if args.agents_api else None
-    output = Path(args.output)
 
     weapons = build_weapons(root, translations, api_skins)
     knives = build_knives(root, translations, api_skins)
     gloves = build_gloves(root, translations, api_skins)
     agents = build_agents(api_agents, root)
+    enrich_bilingual(
+        weapons,
+        knives,
+        gloves,
+        agents,
+        api_skins_zh,
+        api_agents_zh,
+        root,
+        translations_zh,
+    )
 
     if not any(w["skins"] for w in weapons):
         print("No weapon skins were generated; check item_sets and paint_kits in the input schema.", file=sys.stderr)

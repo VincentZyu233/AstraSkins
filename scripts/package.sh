@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 # Builds the distributable layout from the Release build output.
-# Usage: scripts/package.sh <version-label>
+# Usage: scripts/package.sh <version-label> [build-output] [package-dir] [zip-path]
 # Produces AstraSkins-<version-label>.zip containing the addons/ tree.
 set -euo pipefail
 
 VERSION="${1:?version label required}"
-OUT="bin/Release/net10.0"
-PKG="package/addons/counterstrikesharp"
+OUT="${2:-bin/Release/net10.0}"
+PACKAGE_DIR="${3:-package}"
+PKG="$PACKAGE_DIR/addons/counterstrikesharp"
 PLUG="$PKG/plugins/AstraSkins"
 
-rm -rf package
+rm -rf "$PACKAGE_DIR"
 mkdir -p "$PLUG" "$PKG/gamedata" "$PKG/configs/plugins/AstraSkins"
 
 # Plugin binaries: only the plugin itself and its own dependencies.
@@ -28,7 +29,13 @@ done
 cp gamedata/astra_skins.json "$PKG/gamedata/"
 cp config.json "$PKG/configs/plugins/AstraSkins/AstraSkins.json"
 
-ZIP="AstraSkins-${VERSION}.zip"
+ZIP_INPUT="${4:-AstraSkins-${VERSION}.zip}"
+ZIP="$ZIP_INPUT"
+case "$ZIP" in
+  /*|[A-Za-z]:/*) ;;
+  *) ZIP="$(pwd)/$ZIP" ;;
+esac
+mkdir -p "$(dirname "$ZIP")"
 rm -f "$ZIP"
-(cd package && zip -qr "../$ZIP" addons)
-echo "$ZIP"
+(cd "$PACKAGE_DIR" && zip -qr "$ZIP" addons)
+echo "$ZIP_INPUT"

@@ -2,7 +2,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
-using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
@@ -24,6 +23,7 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
     private ISkinStorage? _storage;
     private SkinManager? _skinManager;
     private MenuManager? _menuManager;
+    private BilingualText? _text;
     private readonly Dictionary<int, ulong> _steamIdsBySlot = new();
     private readonly Dictionary<int, DateTime> _maintenanceCooldownsBySlot = new();
     private bool _ready;
@@ -48,18 +48,18 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
             Logger.LogCritical(ex, "Astra Skins failed to load. No fallback mode will be used.");
         }
 
-        AddCommand("css_ws", "Open Astra Skins menu.", CommandOpenWeapons);
-        AddCommand("css_knife", "Open knife skins menu.", CommandOpenKnives);
-        AddCommand("css_gloves", "Open glove skins menu.", CommandOpenGloves);
-        AddCommand("css_agents", "Open agents menu.", CommandOpenAgents);
-        AddCommand("css_wsrefresh", "Reapply selected skins.", CommandRefresh);
-        AddCommand("css_wsreset", "Reset all selected skins.", CommandReset);
-        AddCommand("css_wsreload", "Reload Astra Skins definitions.", CommandReload);
-        AddCommand("css_wsdebug", "Show Astra Skins diagnostic information.", CommandDebug);
-        AddCommand("css_seed", "Set a custom paint seed for the held weapon.", CommandSeed);
-        AddCommand("css_wear", "Set a custom wear value for the held weapon.", CommandWear);
-        AddCommand("css_nametag", "Set a custom name tag for the held weapon.", CommandNameTag);
-        AddCommand("css_stattrak", "Toggle StatTrak on the held weapon.", CommandStatTrak);
+        AddCommand("css_ws", "打开 Astra Skins 菜单 / Open Astra Skins menu", CommandOpenWeapons);
+        AddCommand("css_knife", "打开刀具菜单 / Open knife skins menu", CommandOpenKnives);
+        AddCommand("css_gloves", "打开手套菜单 / Open glove skins menu", CommandOpenGloves);
+        AddCommand("css_agents", "打开探员菜单 / Open agents menu", CommandOpenAgents);
+        AddCommand("css_wsrefresh", "重新应用饰品 / Reapply selected skins", CommandRefresh);
+        AddCommand("css_wsreset", "重置饰品选择 / Reset selected skins", CommandReset);
+        AddCommand("css_wsreload", "重载饰品定义 / Reload Astra Skins definitions", CommandReload);
+        AddCommand("css_wsdebug", "显示诊断信息 / Show Astra Skins diagnostics", CommandDebug);
+        AddCommand("css_seed", "设置图案模板 / Set a paint seed", CommandSeed);
+        AddCommand("css_wear", "设置磨损度 / Set a wear value", CommandWear);
+        AddCommand("css_nametag", "设置名称标签 / Set a name tag", CommandNameTag);
+        AddCommand("css_stattrak", "切换 StatTrak / Toggle StatTrak", CommandStatTrak);
 
         RegisterListener<Listeners.OnClientAuthorized>(OnClientAuthorized);
         RegisterListener<Listeners.OnTick>(OnTick);
@@ -90,6 +90,7 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         _storage = null;
         _skinManager = null;
         _menuManager = null;
+        _text = null;
         _steamIdsBySlot.Clear();
         _ready = false;
     }
@@ -106,6 +107,7 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
     {
         var config = Config;
 
+        _text = new BilingualText(ModuleDirectory);
         var catalog = new DefinitionLoader(Logger).Load(ModuleDirectory, config);
         var storage = CreateStorage(config);
         storage.Initialize();
@@ -114,7 +116,7 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         _storage = storage;
         _skinManager = new SkinManager(storage, catalog, Logger,
             (delay, action) => AddTimer(delay, () => action(), TimerFlags.STOP_ON_MAPCHANGE));
-        _menuManager = new MenuManager(_skinManager, config, Localizer, Logger);
+        _menuManager = new MenuManager(_skinManager, config, _text, Logger);
         _ready = true;
 
         Logger.LogInformation(
@@ -154,7 +156,7 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         if (!_menuManager.HasSearchResults(player!))
         {
             _menuManager.Close(player!, clearScreen: true);
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.search_no_results", query)}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.search_no_results", query)}");
         }
     }
 
@@ -168,7 +170,7 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         var target = _skinManager!.GetHeldCustomizationTarget(player!);
         if (target is null)
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.custom_no_weapon")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.custom_no_weapon")}");
             return;
         }
 
@@ -196,7 +198,7 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
             }
             else
             {
-                command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.stattrak_usage")}");
+                command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.stattrak_usage")}");
                 return;
             }
         }
@@ -208,13 +210,13 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
 
         if (!_skinManager.SetStatTrak(player!, target, next))
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.custom_no_skin")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.custom_no_skin")}");
             return;
         }
 
         command.ReplyToCommand(next is null
-            ? $"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.stattrak_off")}"
-            : $"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.stattrak_on", next.Value)}");
+            ? $"{FormatPrefix()} {_text!.Get("astra.stattrak_off")}"
+            : $"{FormatPrefix()} {_text!.Get("astra.stattrak_on", next.Value)}");
     }
 
     private void CommandOpenKnives(CCSPlayerController? player, CommandInfo command)
@@ -255,7 +257,7 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         }
 
         _skinManager!.ApplyToPlayer(player!, logFailures: true);
-        command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.refresh_done")}");
+        command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.refresh_done")}");
     }
 
     private void CommandReset(CCSPlayerController? player, CommandInfo command)
@@ -270,13 +272,13 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         if (category is "all" or "*")
         {
             _skinManager!.Reset(player!);
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.reset_all")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.reset_all")}");
             return;
         }
 
         if (!_skinManager!.ResetCategory(player!, category))
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.reset_usage")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.reset_usage")}");
             return;
         }
 
@@ -288,26 +290,26 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
             "agent" or "agents" => "astra.reset_agents",
             _ => "astra.reset_all"
         };
-        command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, messageKey)}");
+        command.ReplyToCommand($"{FormatPrefix()} {_text!.Get(messageKey)}");
     }
 
     private void CommandReload(CCSPlayerController? player, CommandInfo command)
     {
         if (_config is null)
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.not_initialized")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.not_initialized")}");
             return;
         }
 
         if (!_config.EnableAdminReloadCommand)
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.reload_disabled")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.reload_disabled")}");
             return;
         }
 
         if (player is not null && !AdminManager.PlayerHasPermissions(player, _config.AdminReloadPermission))
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.reload_no_permission")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.reload_no_permission")}");
             return;
         }
 
@@ -321,12 +323,12 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
                 _skinManager?.ApplyToPlayer(livePlayer);
             }
 
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.reload_done")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.reload_done")}");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Astra Skins definition reload failed.");
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.reload_failed")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.reload_failed")}");
         }
     }
 
@@ -334,19 +336,19 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
     {
         if (_config is null || _skinManager is null)
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.not_initialized")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.not_initialized")}");
             return;
         }
 
         if (!_config.EnableAdminDebugCommand)
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.debug_disabled")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.debug_disabled")}");
             return;
         }
 
         if (player is not null && !AdminManager.PlayerHasPermissions(player, _config.AdminDebugPermission))
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.debug_no_permission")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.debug_no_permission")}");
             return;
         }
 
@@ -355,8 +357,8 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         var knifeSkinCount = catalog.Knives.Sum(k => k.Skins.Count);
         var gloveSkinCount = catalog.Gloves.Sum(g => g.Skins.Count);
         var agentVoiceCount = catalog.Agents.Count(a => !string.IsNullOrWhiteSpace(a.VoicePrefix));
-        command.ReplyToCommand($"{FormatPrefix()} Debug: ready={_ready}, db={_config.DatabaseMode}, inputCooldown={_config.Menu.CooldownMilliseconds}ms, selectionCooldown={_config.Menu.SelectionCooldownMilliseconds}ms");
-        command.ReplyToCommand($"{FormatPrefix()} Data: weapons={catalog.Weapons.Count}/{weaponSkinCount}, knives={catalog.Knives.Count}/{knifeSkinCount}, gloves={catalog.Gloves.Count}/{gloveSkinCount}, agents={catalog.Agents.Count} voices={agentVoiceCount}");
+        command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.debug.summary", _ready, _config.DatabaseMode, _config.Menu.CooldownMilliseconds, _config.Menu.SelectionCooldownMilliseconds)}");
+        command.ReplyToCommand($"{FormatPrefix()} {_text.Get("astra.debug.data", catalog.Weapons.Count, weaponSkinCount, catalog.Knives.Count, knifeSkinCount, catalog.Gloves.Count, gloveSkinCount, catalog.Agents.Count, agentVoiceCount)}");
 
         if (player is null || !IsLiveHuman(player))
         {
@@ -366,8 +368,8 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         var profile = _skinManager.GetProfile(player);
         var agentT = profile.AgentIdsByTeam.TryGetValue("t", out var tAgent) ? tAgent : "none";
         var agentCt = profile.AgentIdsByTeam.TryGetValue("ct", out var ctAgent) ? ctAgent : "none";
-        command.ReplyToCommand($"{FormatPrefix()} Player: steam={player.SteamID}, team={player.Team}, ownedWeapons={_skinManager.GetOwnedWeaponDefinitions(player).Count}");
-        command.ReplyToCommand($"{FormatPrefix()} Selections: weapons={profile.WeaponSkins.Count}, knifeType={profile.KnifeId ?? "none"}, knifeSkin={profile.KnifeSkinId ?? "none"}, glove={profile.GloveSkinId ?? "none"}, agentT={agentT}, agentCT={agentCt}");
+        command.ReplyToCommand($"{FormatPrefix()} {_text.Get("astra.debug.player", player.SteamID, player.Team, _skinManager.GetOwnedWeaponDefinitions(player).Count)}");
+        command.ReplyToCommand($"{FormatPrefix()} {_text.Get("astra.debug.selections", profile.WeaponSkins.Count, profile.KnifeId ?? "none", profile.KnifeSkinId ?? "none", profile.GloveSkinId ?? "none", agentT, agentCt)}");
     }
 
     private void CommandSeed(CCSPlayerController? player, CommandInfo command)
@@ -380,13 +382,13 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         var (target, valueToken) = ResolveCustomizationArgs(player!, command);
         if (valueToken is null)
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.seed_usage")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.seed_usage")}");
             return;
         }
 
         if (target is null)
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.custom_no_weapon")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.custom_no_weapon")}");
             return;
         }
 
@@ -401,7 +403,7 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         }
         else
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.seed_usage")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.seed_usage")}");
             return;
         }
 
@@ -412,13 +414,13 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
 
         if (!_skinManager!.SetSeed(player!, target, seed))
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.custom_no_skin")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.custom_no_skin")}");
             return;
         }
 
         command.ReplyToCommand($"{FormatPrefix()} {(seed is null
-            ? Localizer.ForPlayer(player, "astra.seed_reset")
-            : Localizer.ForPlayer(player, "astra.seed_set", seed.Value))}");
+            ? _text!.Get("astra.seed_reset")
+            : _text!.Get("astra.seed_set", seed.Value))}");
     }
 
     private void CommandWear(CCSPlayerController? player, CommandInfo command)
@@ -431,13 +433,13 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         var (target, valueToken) = ResolveCustomizationArgs(player!, command);
         if (valueToken is null)
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.wear_usage")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.wear_usage")}");
             return;
         }
 
         if (target is null)
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.custom_no_weapon")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.custom_no_weapon")}");
             return;
         }
 
@@ -453,7 +455,7 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         }
         else
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.wear_usage")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.wear_usage")}");
             return;
         }
 
@@ -464,13 +466,13 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
 
         if (!_skinManager!.SetWear(player!, target, wear))
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.custom_no_skin")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.custom_no_skin")}");
             return;
         }
 
         command.ReplyToCommand($"{FormatPrefix()} {(wear is null
-            ? Localizer.ForPlayer(player, "astra.wear_reset")
-            : Localizer.ForPlayer(player, "astra.wear_set", wear.Value.ToString("0.######", CultureInfo.InvariantCulture)))}");
+            ? _text!.Get("astra.wear_reset")
+            : _text!.Get("astra.wear_set", wear.Value.ToString("0.######", CultureInfo.InvariantCulture)))}");
     }
 
     private void CommandNameTag(CCSPlayerController? player, CommandInfo command)
@@ -483,14 +485,14 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         var text = command.ArgString.Trim();
         if (text.Length == 0)
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.nametag_usage")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.nametag_usage")}");
             return;
         }
 
         var target = _skinManager!.GetHeldCustomizationTarget(player!);
         if (target is null)
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.custom_no_weapon")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.custom_no_weapon")}");
             return;
         }
 
@@ -504,7 +506,7 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
             nameTag = SanitizeNameTag(text);
             if (nameTag.Length == 0)
             {
-                command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.nametag_usage")}");
+                command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.nametag_usage")}");
                 return;
             }
         }
@@ -516,27 +518,27 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
 
         if (!_skinManager.SetNameTag(player!, target, nameTag))
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.custom_no_skin")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.custom_no_skin")}");
             return;
         }
 
         command.ReplyToCommand($"{FormatPrefix()} {(nameTag is null
-            ? Localizer.ForPlayer(player, "astra.nametag_reset")
-            : Localizer.ForPlayer(player, "astra.nametag_set", nameTag))}");
+            ? _text!.Get("astra.nametag_reset")
+            : _text!.Get("astra.nametag_set", nameTag))}");
     }
 
     private bool RequireCustomization(CCSPlayerController player, CommandInfo command)
     {
         if (!_config!.Customization.Enabled)
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.custom_disabled")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.custom_disabled")}");
             return false;
         }
 
         if (!string.IsNullOrWhiteSpace(_config.Customization.Permission) &&
             !AdminManager.PlayerHasPermissions(player, _config.Customization.Permission))
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.custom_no_permission")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.custom_no_permission")}");
             return false;
         }
 
@@ -809,13 +811,13 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
     {
         if (!_ready || _config is null || _skinManager is null || _menuManager is null)
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.not_ready")}");
+            command.ReplyToCommand($"{FormatPrefix()} {(_text?.Get("astra.not_ready") ?? BilingualText.Combine("插件尚未就绪，请检查服务器日志。", "Plugin is not ready. Check server logs."))}");
             return false;
         }
 
         if (player is null || !IsLiveHuman(player))
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.players_only")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.players_only")}");
             return false;
         }
 
@@ -829,7 +831,7 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
             return true;
         }
 
-        command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.menu_disabled_dead")}");
+        command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.menu_disabled_dead")}");
         return false;
     }
 
@@ -841,7 +843,7 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         if (_maintenanceCooldownsBySlot.TryGetValue(player.Slot, out var last) &&
             (now - last).TotalMilliseconds < MaintenanceCommandCooldownMilliseconds)
         {
-            command.ReplyToCommand($"{FormatPrefix()} {Localizer.ForPlayer(player, "astra.command_cooldown")}");
+            command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.command_cooldown")}");
             return false;
         }
 
