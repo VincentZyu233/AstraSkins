@@ -9,10 +9,10 @@
 
 **为 Counter-Strike 2 提供武器皮肤、刀具、手套和探员，并内置 WASD 菜单、玩家独立自定义和数据库持久化。**
 
-[![CS2](https://img.shields.io/badge/game-Counter--Strike%202-orange)](https://www.counter-strike.net/)
+[![CS2](https://img.shields.io/badge/for-Counter_Strike_2:_Global_Offensive-FFB71E?style=for-the-badge&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiI%2BCiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjgiIGhlaWdodD0iMTYiIGZpbGw9IiNGRkI3MUUiLz4KICA8cmVjdCB4PSI4IiB5PSIwIiB3aWR0aD0iOCIgaGVpZ2h0PSIxNiIgZmlsbD0iIzFFNEQ4QyIvPgogIDxjaXJjbGUgY3g9IjgiIGN5PSIzLjUiIHI9IjEuOCIgZmlsbD0id2hpdGUiLz4KICA8cmVjdCB4PSI3IiB5PSI1LjUiIHdpZHRoPSIyIiBoZWlnaHQ9IjMuNSIgcng9Ii41IiBmaWxsPSJ3aGl0ZSIvPgogIDxyZWN0IHg9IjQuNSIgeT0iNi41IiB3aWR0aD0iMi41IiBoZWlnaHQ9IjEuNSIgcng9Ii40IiBmaWxsPSJ3aGl0ZSIvPgogIDxyZWN0IHg9IjkiIHk9IjYuNSIgd2lkdGg9IjIuNSIgaGVpZ2h0PSIxLjUiIHJ4PSIuNCIgZmlsbD0id2hpdGUiLz4KICA8cmVjdCB4PSI2LjUiIHk9IjkiIHdpZHRoPSIxLjMiIGhlaWdodD0iMyIgcng9Ii4zIiBmaWxsPSJ3aGl0ZSIvPgogIDxyZWN0IHg9IjguMiIgeT0iOSIgd2lkdGg9IjEuMyIgaGVpZ2h0PSIzIiByeD0iLjMiIGZpbGw9IndoaXRlIi8%2BCjwvc3ZnPg%3D%3D&logoColor=white&labelColor=1E4D8C)](https://developer.valvesoftware.com/wiki/Counter-Strike_2/Dedicated_Servers)
 [![CounterStrikeSharp](https://img.shields.io/badge/CounterStrikeSharp-%E2%89%A5%201.0.369-blue)](https://github.com/roflmuffin/CounterStrikeSharp)
-[![.NET](https://img.shields.io/badge/.NET-10-512BD4)](https://dotnet.microsoft.com/)
-[![CI](https://github.com/Ayrton09/AstraSkins/actions/workflows/ci.yml/badge.svg)](https://github.com/Ayrton09/AstraSkins/actions/workflows/ci.yml)
+[![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
+[![CI](https://github.com/VincentZyu233/AstraSkins/actions/workflows/ci.yml/badge.svg)](https://github.com/VincentZyu233/AstraSkins/actions/workflows/ci.yml)
 [![许可证](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 </div>
@@ -23,7 +23,7 @@
 
 ## ✨ 功能特性
 
-- 🎨 **1,400+ 款皮肤、20 种刀具及其 576 款外观、8 种手套、63 名探员、92 套音乐盒** — 全部由 JSON 数据驱动，代码中不内置数据集。
+- 🎨 **35 种武器及其 1,456 款皮肤、20 种刀具及其 576 款外观、8 种手套、63 名探员、92 套音乐盒** — 全部由 JSON 数据驱动，代码中不内置数据集。
 - 🕹️ **内置 WASD 菜单** — 使用 `W`/`S` 导航，按 `E` 选择，无需外部菜单插件。
 - 🔧 **玩家独立自定义** — 可通过 `!seed`、`!wear`、`!nametag` 和 `!stattrak` 自定义图案模板、磨损度、名称标签及 StatTrak 计数。
 - 🔎 **搜索** — 使用 `!ws <文本>` 即可查找任意皮肤、刀具、手套、探员或音乐盒，无需逐页浏览。
@@ -123,7 +123,7 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
 
 ## 🔍 搜索
 
-仅武器皮肤就有 1,449 款，逐页浏览并不总是最快的方式。`!ws <搜索内容>` 会打开一个扁平结果列表，涵盖武器皮肤、刀具外观、手套外观、探员和音乐盒。
+仅武器皮肤就有 1,456 款，逐页浏览并不总是最快的方式。`!ws <搜索内容>` 会打开一个扁平结果列表，涵盖武器皮肤、刀具外观、手套外观、探员和音乐盒。
 
 每个以空格分隔的词都必须出现在条目中，因此可以快速缩小范围：
 
@@ -133,9 +133,14 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
 !ws marble fade    → 所有 Marble Fade 刀具
 !ws ct mccoy       → 对应的 CT 探员
 !ws 深红突击       → 对应的音乐盒
+!ws 奥林匹斯       → Zeus x27 奥林匹斯皮肤
 ```
 
 搜索结果会遵守权限限制，最多显示 64 项；已经装备的物品会以 `*` 标记。
+
+## ⚡ Zeus x27 电击枪
+
+主菜单会在音乐盒之后固定显示**宙斯x27电击枪 / Zeus x27**；“配置所有”中也可按**电击枪 / Zeus x27 → 宙斯x27电击枪 / Zeus x27 → 皮肤**进入。即使玩家已持有 Zeus，固定入口也只显示一次；缺少有效 Zeus 定义时入口会自动隐藏。
 
 ## 🎵 音乐盒
 
@@ -237,8 +242,8 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
 
 | 类型 | 数量 |
 | --- | ---: |
-| 武器 | 34 |
-| 武器皮肤 | 1,449 |
+| 武器 | 35 |
+| 武器皮肤 | 1,456 |
 | 刀具 | 20 |
 | 刀具皮肤 | 576 |
 | 手套类型 | 8 |

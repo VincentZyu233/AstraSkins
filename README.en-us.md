@@ -9,10 +9,10 @@
 
 **Weapon skins, knives, gloves, and agents for Counter-Strike 2 — with a built-in WASD menu, per-player customization, and database-backed persistence.**
 
-[![CS2](https://img.shields.io/badge/game-Counter--Strike%202-orange)](https://www.counter-strike.net/)
+[![CS2](https://img.shields.io/badge/for-Counter_Strike_2:_Global_Offensive-FFB71E?style=for-the-badge&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiI%2BCiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjgiIGhlaWdodD0iMTYiIGZpbGw9IiNGRkI3MUUiLz4KICA8cmVjdCB4PSI4IiB5PSIwIiB3aWR0aD0iOCIgaGVpZ2h0PSIxNiIgZmlsbD0iIzFFNEQ4QyIvPgogIDxjaXJjbGUgY3g9IjgiIGN5PSIzLjUiIHI9IjEuOCIgZmlsbD0id2hpdGUiLz4KICA8cmVjdCB4PSI3IiB5PSI1LjUiIHdpZHRoPSIyIiBoZWlnaHQ9IjMuNSIgcng9Ii41IiBmaWxsPSJ3aGl0ZSIvPgogIDxyZWN0IHg9IjQuNSIgeT0iNi41IiB3aWR0aD0iMi41IiBoZWlnaHQ9IjEuNSIgcng9Ii40IiBmaWxsPSJ3aGl0ZSIvPgogIDxyZWN0IHg9IjkiIHk9IjYuNSIgd2lkdGg9IjIuNSIgaGVpZ2h0PSIxLjUiIHJ4PSIuNCIgZmlsbD0id2hpdGUiLz4KICA8cmVjdCB4PSI2LjUiIHk9IjkiIHdpZHRoPSIxLjMiIGhlaWdodD0iMyIgcng9Ii4zIiBmaWxsPSJ3aGl0ZSIvPgogIDxyZWN0IHg9IjguMiIgeT0iOSIgd2lkdGg9IjEuMyIgaGVpZ2h0PSIzIiByeD0iLjMiIGZpbGw9IndoaXRlIi8%2BCjwvc3ZnPg%3D%3D&logoColor=white&labelColor=1E4D8C)](https://developer.valvesoftware.com/wiki/Counter-Strike_2/Dedicated_Servers)
 [![CounterStrikeSharp](https://img.shields.io/badge/CounterStrikeSharp-%E2%89%A5%201.0.369-blue)](https://github.com/roflmuffin/CounterStrikeSharp)
-[![.NET](https://img.shields.io/badge/.NET-10-512BD4)](https://dotnet.microsoft.com/)
-[![CI](https://github.com/Ayrton09/AstraSkins/actions/workflows/ci.yml/badge.svg)](https://github.com/Ayrton09/AstraSkins/actions/workflows/ci.yml)
+[![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
+[![CI](https://github.com/VincentZyu233/AstraSkins/actions/workflows/ci.yml/badge.svg)](https://github.com/VincentZyu233/AstraSkins/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 </div>
@@ -23,7 +23,7 @@
 
 ## ✨ Features
 
-- 🎨 **1,400+ skins, 20 knives with 576 finishes, 8 glove types, 63 agents, 92 music kits** — all data-driven from JSON, no datasets baked into the code.
+- 🎨 **35 weapons with 1,456 skins, 20 knives with 576 finishes, 8 glove types, 63 agents, and 92 music kits** — all data-driven from JSON, no datasets baked into the code.
 - 🕹️ **Built-in WASD menu** — navigate with `W`/`S`, select with `E`. No external menu plugin required.
 - 🔧 **Per-player customization** — custom paint seed, wear/float, name tags, and StatTrak counters via `!seed`, `!wear`, `!nametag`, and `!stattrak`.
 - 🔎 **Search** — `!ws <text>` finds any skin, knife, glove, agent, or music kit without scrolling through pages.
@@ -123,7 +123,7 @@ The menu items are numbered as a visual guide for orientation; navigation is by 
 
 ## 🔍 Search
 
-With 1,449 weapon skins alone, scrolling is not always the fastest way in. `!ws <search>` opens a flat result list spanning weapon skins, knife finishes, glove finishes, agents, and music kits.
+With 1,456 weapon skins alone, scrolling is not always the fastest way in. `!ws <search>` opens a flat result list spanning weapon skins, knife finishes, glove finishes, agents, and music kits.
 
 Every whitespace-separated term has to appear in the entry, so you can narrow down quickly:
 
@@ -133,9 +133,14 @@ Every whitespace-separated term has to appear in the entry, so you can narrow do
 !ws marble fade    → every Marble Fade knife
 !ws ct mccoy       → the CT agent
 !ws crimson assault → the matching music kit
+!ws olympus        → the Zeus x27 Olympus skin
 ```
 
 Results respect permissions and are capped at 64 entries; already-equipped items are marked with `*`.
+
+## ⚡ Zeus x27 Taser
+
+The main menu always shows **宙斯x27电击枪 / Zeus x27** after Music Kits; it is also available through **Configure All → 电击枪 / Zeus x27 → 宙斯x27电击枪 / Zeus x27 → skin**. The fixed entry appears only once even while Zeus is owned, and hides automatically if no valid Zeus definition is loaded.
 
 ## 🎵 Music Kits
 
@@ -237,8 +242,8 @@ Currently packaged:
 
 | Type | Count |
 | --- | ---: |
-| Weapons | 34 |
-| Weapon skins | 1,449 |
+| Weapons | 35 |
+| Weapon skins | 1,456 |
 | Knives | 20 |
 | Knife skins | 576 |
 | Glove types | 8 |

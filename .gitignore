@@ -27,8 +27,17 @@ weapons-1.7.8/
 # 🛠️ IDE/编辑器文件
 .vs/
 .vscode/
+.idea/
 *.user
 *.suo
+*.swp
+.DS_Store
+Thumbs.db
+
+# 🧪 测试、覆盖率及本地报告
+TestResults/
+coverage/
+*.trx
 
 # 📦 发布打包产物
 package/
@@ -37,3 +46,6 @@ package/
 # 🧹 本地临时文件
 /temp/
 /tmp/
+
+# 🧭 仅供本机 Codex 使用的绝对路径与缓存约束
+/AGENTS.override.md
