@@ -15,6 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-dotnet@v4
         with:
@@ -36,7 +38,7 @@ jobs:
             exit 1
           fi
 
-      - name: Package
+      - name: Package release assets
         id: package
         run: |
           if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
@@ -45,19 +47,70 @@ jobs:
             label="${GITHUB_SHA::7}"
           fi
           zip=$(bash scripts/package.sh "$label")
-          echo "zip=$zip" >> "$GITHUB_OUTPUT"
+          mkdir -p release-assets
+          cp "$zip" "release-assets/AstraSkins-$label.zip"
+          cp src/AstraSkins/bin/Release/net10.0/AstraSkins.dll "release-assets/AstraSkins-$label.dll"
+          cp src/AstraSkins/bin/Release/net10.0/AstraSkins.pdb "release-assets/AstraSkins-$label.pdb"
+          echo "label=$label" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.package.outputs.zip }}
-          path: ${{ steps.package.outputs.zip }}
+          name: AstraSkins-${{ steps.package.outputs.label }}
+          path: release-assets/
+          if-no-files-found: error
 
-      # Tag pushes create a DRAFT release with the zip attached; the release
-      # notes are written by hand and published manually from GitHub.
-      - name: Draft release
+      - name: Generate Chinese release notes
+        if: github.ref_type == 'tag'
+        env:
+          REPO: ${{ github.repository }}
+          VERSION: ${{ github.ref_name }}
+        run: |
+          previous_tag=$(git tag --sort=-version:refname | grep -Fxv "$VERSION" | head -n 1 || true)
+          if [[ -n "$previous_tag" ]]; then
+            commit_log=$(git log "$previous_tag..HEAD" --pretty=format:'- `%h` %s（%ad，@%an）' --date=short --reverse)
+            changelog_url="https://github.com/$REPO/compare/$previous_tag...$VERSION"
+          else
+            commit_log=$(git log --pretty=format:'- `%h` %s（%ad，@%an）' --date=short --reverse)
+            changelog_url="https://github.com/$REPO/commits/$VERSION"
+          fi
+          export BASE_URL="https://github.com/$REPO/releases/download/$VERSION"
+          export BUILD_DATE="$(date -u '+%Y-%m-%d %H:%M UTC')"
+          export COMMIT_HASH="[\`${GITHUB_SHA::7}\`](https://github.com/$REPO/commit/$GITHUB_SHA)"
+          export COMMIT_LOG="$commit_log"
+          export CHANGELOG_URL="$changelog_url"
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          notes = Path(".github/release_template.md").read_text(encoding="utf-8")
+          replacements = {
+              "__REPO__": os.environ["REPO"],
+              "__VERSION__": os.environ["VERSION"],
+              "__BASE_URL__": os.environ["BASE_URL"],
+              "__BUILD_DATE__": os.environ["BUILD_DATE"],
+              "__COMMIT_HASH__": os.environ["COMMIT_HASH"],
+              "__COMMIT_LOG__": os.environ["COMMIT_LOG"],
+              "__CHANGELOG_URL__": os.environ["CHANGELOG_URL"],
+          }
+          for key, value in replacements.items():
+              notes = notes.replace(key, value)
+          Path("release_notes.md").write_text(notes, encoding="utf-8")
+          PY
+
+      - name: Publish latest GitHub release
         if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" "${{ steps.package.outputs.zip }}" \
-            --draft --title "$GITHUB_REF_NAME" --notes ""
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release edit "$GITHUB_REF_NAME" \
+              --title "AstraSkins $GITHUB_REF_NAME" \
+              --notes-file release_notes.md \
+              --latest --draft=false --prerelease=false
+            gh release upload "$GITHUB_REF_NAME" release-assets/* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" release-assets/* \
+              --title "AstraSkins $GITHUB_REF_NAME" \
+              --notes-file release_notes.md \
+              --latest --draft=false --prerelease=false
+          fi
