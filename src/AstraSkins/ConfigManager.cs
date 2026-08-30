@@ -75,9 +75,17 @@ public sealed class ConfigManager
             config.MySql.SslMode = sslMode;
         }
 
-        if (config.Menu.ItemsPerPage is < 3 or > 10)
+        var textSize = config.Menu.TextSize?.Trim().ToLowerInvariant();
+        if (textSize is not ("small" or "medium" or "large"))
         {
-            throw new InvalidOperationException("Menu.ItemsPerPage must be between 3 and 10.");
+            throw new InvalidOperationException("Menu.TextSize must be one of: small, medium, large.");
+        }
+
+        config.Menu.TextSize = textSize;
+
+        if (config.Menu.ItemsPerPage is < 3 or > 7)
+        {
+            throw new InvalidOperationException("Menu.ItemsPerPage must be between 3 and 7.");
         }
 
         if (config.Menu.TimeoutSeconds < 5)
@@ -103,9 +111,10 @@ public sealed class ConfigManager
         if (string.IsNullOrWhiteSpace(config.Definitions.Weapons) ||
             string.IsNullOrWhiteSpace(config.Definitions.Knives) ||
             string.IsNullOrWhiteSpace(config.Definitions.Gloves) ||
-            string.IsNullOrWhiteSpace(config.Definitions.Agents))
+            string.IsNullOrWhiteSpace(config.Definitions.Agents) ||
+            string.IsNullOrWhiteSpace(config.Definitions.MusicKits))
         {
-            throw new InvalidOperationException("Definitions.Weapons, Definitions.Knives, Definitions.Gloves, and Definitions.Agents are required.");
+            throw new InvalidOperationException("Definitions.Weapons, Definitions.Knives, Definitions.Gloves, Definitions.Agents, and Definitions.MusicKits are required.");
         }
 
         _logger.LogInformation("Astra Skins config validated with DatabaseMode={DatabaseMode}", config.DatabaseMode);

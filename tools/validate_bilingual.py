@@ -2,12 +2,13 @@
 import argparse
 import html
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
 
 
-FILES = ("weapons", "knives", "gloves", "agents", "categories")
+FILES = ("weapons", "knives", "gloves", "agents", "categories", "music_kits")
 
 
 def combine(chinese, english):
@@ -27,10 +28,32 @@ def strip_chinese_names(value):
 
 
 def load_ref(ref, name):
-    raw = subprocess.check_output(
-        ["git", "show", f"{ref}:data/{name}.json"], text=True, encoding="utf-8"
-    )
+    path = f"{ref}:data/{name}.json"
+    if subprocess.run(
+        ["git", "cat-file", "-e", path], capture_output=True, check=False
+    ).returncode != 0:
+        return None
+    raw = subprocess.check_output(["git", "show", path], text=True, encoding="utf-8")
     return json.loads(raw)
+
+
+def readme_structure(lines):
+    result = []
+    for line in lines:
+        if not line:
+            result.append("blank")
+        elif line.startswith("#"):
+            match = re.match(r"^(#+) (\S+)", line)
+            result.append(("heading", match.group(1), match.group(2)) if match else ("heading", "invalid"))
+        elif line.startswith("```"):
+            result.append(("fence", line))
+        elif line.startswith("| ---"):
+            result.append(("table", line))
+        elif line.startswith("> **["):
+            result.append("language-link")
+        else:
+            result.append("content")
+    return result
 
 
 def validate_named_entry(entry, owner, seen):
@@ -71,8 +94,16 @@ def main():
             total += 1
         if args.baseline_ref:
             baseline = load_ref(args.baseline_ref, name)
-            if strip_chinese_names(catalogs[name]) != strip_chinese_names(baseline):
+            if baseline is not None and strip_chinese_names(catalogs[name]) != strip_chinese_names(baseline):
                 raise ValueError(f"data/{name}.json changed fields other than displayNameZh")
+
+    music_kits = catalogs["music_kits"]
+    if len(music_kits) != 92:
+        raise ValueError(f"expected 92 music kits, found {len(music_kits)}")
+    if any(not isinstance(kit.get("musicKit"), int) or kit["musicKit"] <= 0 for kit in music_kits):
+        raise ValueError("music kits must have a positive integer musicKit value")
+    if len({kit["musicKit"] for kit in music_kits}) != len(music_kits):
+        raise ValueError("musicKit values must be unique")
 
     en = json.loads((root / "lang" / "en.json").read_text(encoding="utf-8"))
     zh = json.loads((root / "lang" / "zh.json").read_text(encoding="utf-8"))
@@ -101,8 +132,23 @@ def main():
     menu = (source_dir / "MenuManager.cs").read_text(encoding="utf-8")
     if "HtmlEncode(BilingualText.Truncate(" not in menu:
         raise ValueError("menu text must be truncated before HTML encoding")
+    if "BilingualText.DisplayWidth(prefix)" not in menu or "TextElementWidth" not in sources:
+        raise ValueError("wide-character-aware menu truncation is not wired")
+    if "音乐盒 music music kit" not in menu or "SetMusicKit(current, kitId)" not in menu:
+        raise ValueError("music kit Chinese/English search is not wired")
 
-    print(f"Validated {len(FILES)} catalogs, {total} bilingual names, {len(en)} language keys, search, fallback, de-duplication, and HTML safety.")
+    readme_zh = (root / "README.md").read_text(encoding="utf-8").splitlines()
+    readme_en = (root / "README.en-us.md").read_text(encoding="utf-8").splitlines()
+    if len(readme_zh) != len(readme_en):
+        raise ValueError(f"README line count mismatch: zh={len(readme_zh)}, en={len(readme_en)}")
+    if readme_structure(readme_zh) != readme_structure(readme_en):
+        raise ValueError("README heading, fence, table, blank-line, or language-link structure mismatch")
+
+    attributes = (root / ".gitattributes").read_text(encoding="utf-8")
+    if "*.md linguist-detectable=true" not in attributes or "README*.md linguist-language=Markdown" not in attributes:
+        raise ValueError("both READMEs must be included in GitHub language statistics")
+
+    print(f"Validated {len(FILES)} catalogs, {total} bilingual names, {len(en)} language keys, search, truncation, README parity, fallback, de-duplication, and HTML safety.")
     return 0
 
 

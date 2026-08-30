@@ -23,12 +23,13 @@
 
 ## ✨ 功能特性
 
-- 🎨 **1,400+ 款武器皮肤、20 种刀具及其 576 款外观、8 种手套、63 名探员** — 全部由 JSON 数据驱动，代码中不内置数据集。
+- 🎨 **1,400+ 款皮肤、20 种刀具及其 576 款外观、8 种手套、63 名探员、92 套音乐盒** — 全部由 JSON 数据驱动，代码中不内置数据集。
 - 🕹️ **内置 WASD 菜单** — 使用 `W`/`S` 导航，按 `E` 选择，无需外部菜单插件。
 - 🔧 **玩家独立自定义** — 可通过 `!seed`、`!wear`、`!nametag` 和 `!stattrak` 自定义图案模板、磨损度、名称标签及 StatTrak 计数。
-- 🔎 **搜索** — 使用 `!ws <文本>` 即可查找任意皮肤、刀具、手套或探员，无需逐页浏览。
+- 🔎 **搜索** — 使用 `!ws <文本>` 即可查找任意皮肤、刀具、手套、探员或音乐盒，无需逐页浏览。
+- 🎵 **音乐盒** — 可从菜单选择 92 套音乐盒，并可选在计分板显示每套音乐盒的 MVP 计数。
 - 💾 **持久化选择** — 支持 SQLite 或 MySQL，以 SteamID64 为键；重连、换图和重启后选择仍会保留。
-- 🌍 **7 种语言** — 按玩家提供本地化（英语、西班牙语、中文、葡萄牙语、德语、法语、俄语）。
+- 🌍 **固定双语** — 所有玩家可见菜单和反馈统一显示为 `中文 / English`。
 - 🗣️ **探员无线电语音** — 当 CS2 schema 提供语音数据时，探员会保留其语音台词。
 - 🛡️ **权限控制** — 可将单个皮肤、刀具、手套、探员或整个自定义功能限制为指定管理员权限。
 - ⚙️ **管理工具** — 支持热重载定义和诊断命令。
@@ -69,7 +70,7 @@
    ```
 
 4. 在 `configs/plugins/AstraSkins/AstraSkins.json` 中配置数据库（参见[配置](#配置)）。SQLite 开箱即用；MySQL 需要预先存在的数据库和用户。
-5. 重启服务器（或执行 `css_plugins load AstraSkins`）。启动日志会报告加载的皮肤、刀具、手套和探员数量。
+5. 重启服务器（或执行 `css_plugins load AstraSkins`）。启动日志会报告加载的皮肤、刀具、手套、探员和音乐盒数量。
 
 ## ⌨️ 命令
 
@@ -78,12 +79,12 @@
 | 命令 | 说明 |
 | --- | --- |
 | `!ws` | 打开主皮肤菜单 |
-| `!ws <搜索内容>` | 同时搜索所有皮肤、刀具、手套和探员 |
+| `!ws <搜索内容>` | 同时搜索所有皮肤、刀具、手套、探员和音乐盒 |
 | `!knife` | 打开刀具菜单 |
 | `!gloves` | 打开手套菜单 |
 | `!agents` | 打开探员菜单 |
 | `!wsrefresh` | 重新应用已保存的选择 |
-| `!wsreset [all\|weapons\|knife\|gloves\|agents]` | 重置全部或指定分类的已保存选择 |
+| `!wsreset [all\|weapons\|knife\|gloves\|agents\|music]` | 重置全部或指定分类的已保存选择 |
 
 ### 🎨 自定义
 
@@ -122,7 +123,7 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
 
 ## 🔍 搜索
 
-仅武器皮肤就有 1,449 款，逐页浏览并不总是最快的方式。`!ws <搜索内容>` 会打开一个扁平结果列表，涵盖武器皮肤、刀具外观、手套外观和探员。
+仅武器皮肤就有 1,449 款，逐页浏览并不总是最快的方式。`!ws <搜索内容>` 会打开一个扁平结果列表，涵盖武器皮肤、刀具外观、手套外观、探员和音乐盒。
 
 每个以空格分隔的词都必须出现在条目中，因此可以快速缩小范围：
 
@@ -131,9 +132,18 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
 !ws ak redline     → 直接找到 AK-47 Redline
 !ws marble fade    → 所有 Marble Fade 刀具
 !ws ct mccoy       → 对应的 CT 探员
+!ws 深红突击       → 对应的音乐盒
 ```
 
 搜索结果会遵守权限限制，最多显示 64 项；已经装备的物品会以 `*` 标记。
+
+## 🎵 音乐盒
+
+主菜单包含**音乐盒**分类，可选择全部 92 套音乐盒，也可用“默认 / Default”恢复游戏默认音乐。选择会在回合开始、MVP 和炸弹安放等正常时机播放，并与其他选择一样持久保存。
+
+将 `EnableMusicKitMvpCounter` 设为 `true` 后，插件会按音乐盒记录玩家的 MVP 次数，并像官方 StatTrak 音乐盒一样显示在 MVP 计分板中。执行 `!wsreset music` 或完整重置会清除计数。
+
+缺少 `data/music_kits.json` 时，音乐盒分类会自动隐藏。
 
 ## ⚙️ 配置
 
@@ -155,7 +165,8 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
     "SslMode": "required"
   },
   "Menu": {
-    "ItemsPerPage": 6,
+    "TextSize": "medium",
+    "ItemsPerPage": 7,
     "TimeoutSeconds": 25,
     "CooldownMilliseconds": 180,
     "SelectionCooldownMilliseconds": 900,
@@ -166,11 +177,13 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
     "Permission": "",
     "MaxNameTagLength": 20
   },
+  "EnableMusicKitMvpCounter": false,
   "Definitions": {
     "Weapons": "data/weapons.json",
     "Knives": "data/knives.json",
     "Gloves": "data/gloves.json",
     "Agents": "data/agents.json",
+    "MusicKits": "data/music_kits.json",
     "Categories": "data/categories.json"
   },
   "EnableAdminReloadCommand": true,
@@ -183,7 +196,8 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
 | 配置项 | 作用 |
 | --- | --- |
 | `DatabaseMode` | `"sqlite"` 或 `"mysql"` — 必填，启动时验证 |
-| `Menu.ItemsPerPage` | 可见菜单行数（3–6） |
+| `Menu.TextSize` | 菜单字号：`small`、`medium` 或 `large` |
+| `Menu.ItemsPerPage` | 可见菜单行数（3–7） |
 | `Menu.TimeoutSeconds` | 菜单空闲多少秒后自动关闭 |
 | `Menu.CooldownMilliseconds` | 菜单按键之间的最短延迟 |
 | `Menu.SelectionCooldownMilliseconds` | 皮肤选择之间的最短延迟 |
@@ -191,6 +205,7 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
 | `Customization.Enabled` | `!seed` / `!wear` / `!nametag` 的总开关 |
 | `Customization.Permission` | 将自定义限制为某项权限；留空 = 所有人 |
 | `Customization.MaxNameTagLength` | 名称标签长度上限，4–32（默认 20，与游戏实际限制一致） |
+| `EnableMusicKitMvpCounter` | 按玩家和音乐盒记录 MVP 次数并显示在计分板中 |
 
 ### 🗃️ SQLite
 
@@ -210,7 +225,7 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
 
 ## 🌐 本地化
 
-所有面向玩家的消息和菜单标签都会通过 CounterStrikeSharp 的语言系统按玩家本地化。玩家可使用 `css_lang <语言>` 选择语言（例如 `css_lang es`）；缺失翻译会回退到服务器语言。
+所有面向玩家的消息和菜单标签都固定显示为 `中文 / English`，不受玩家 `css_lang` 设置影响。中文缺失时回退到英文，中英文相同时只显示一次。
 
 内置语言：`en` 英语 · `es` 西班牙语 · `zh` 简体中文 · `pt` 葡萄牙语 · `de` 德语 · `fr` 法语 · `ru` 俄语 — 均为 `lang/` 中的扁平键值 JSON 文件。
 
@@ -231,6 +246,7 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
 | 手套类型 | 8 |
 | 手套皮肤 | 94 |
 | 探员 | 63 |
+| 音乐盒 | 92 |
 
 若要在 CS2 更新后重新生成数据，请运行内置生成器，它会自动拉取最新的 `items_game.txt` 和翻译数据：
 

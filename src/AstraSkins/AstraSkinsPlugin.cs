@@ -26,13 +26,14 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
     private BilingualText? _text;
     private readonly Dictionary<int, ulong> _steamIdsBySlot = new();
     private readonly Dictionary<int, DateTime> _maintenanceCooldownsBySlot = new();
+    private DateTime _nextMusicKitHealthCheckUtc = DateTime.MinValue;
     private bool _ready;
     private bool _giveNamedItemHooked;
 
     public PluginConfig Config { get; set; } = new();
 
     public override string ModuleName => "Astra Skins";
-    public override string ModuleVersion => "1.0.6";
+    public override string ModuleVersion => "1.1.0";
     public override string ModuleAuthor => "Ayrton09";
     public override string ModuleDescription => string.Empty;
 
@@ -62,6 +63,7 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         AddCommand("css_stattrak", "切换 StatTrak / Toggle StatTrak", CommandStatTrak);
 
         RegisterListener<Listeners.OnClientAuthorized>(OnClientAuthorized);
+        RegisterListener<Listeners.OnMapStart>(OnMapStart);
         RegisterListener<Listeners.OnTick>(OnTick);
         RegisterListener<Listeners.OnPlayerButtonsChanged>(OnPlayerButtonsChanged);
         RegisterListener<Listeners.OnServerPrecacheResources>(OnServerPrecacheResources);
@@ -69,6 +71,7 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawnPost, HookMode.Post);
         RegisterEventHandler<EventRoundFreezeEnd>(OnRoundFreezeEndPre, HookMode.Pre);
         RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
+        RegisterEventHandler<EventRoundMvp>(OnRoundMvp, HookMode.Pre);
         RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
         RegisterEventHandler<EventPlayerTeam>(OnPlayerTeam);
         HookGiveNamedItem();
@@ -117,23 +120,26 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         _skinManager = new SkinManager(storage, catalog, Logger,
             (delay, action) => AddTimer(delay, () => action(), TimerFlags.STOP_ON_MAPCHANGE));
         _menuManager = new MenuManager(_skinManager, config, _text, Logger);
+        _nextMusicKitHealthCheckUtc = DateTime.MinValue;
         _ready = true;
 
         Logger.LogInformation(
-            "Astra Skins loaded: {Weapons} weapons, {KnifeSkins} knife skins, {GloveSkins} glove skins, {Agents} agents, DB={DatabaseMode}",
+            "Astra Skins loaded: {Weapons} weapons, {KnifeSkins} knife skins, {GloveSkins} glove skins, {Agents} agents, {MusicKits} music kits, DB={DatabaseMode}, MusicKitMvpCounter={MusicKitMvpCounter}",
             catalog.Weapons.Count,
             catalog.KnifeSkinsById.Count,
             catalog.GloveSkinsById.Count,
             catalog.Agents.Count,
-            config.DatabaseMode);
+            catalog.MusicKits.Count,
+            config.DatabaseMode,
+            config.EnableMusicKitMvpCounter);
     }
 
     private ISkinStorage CreateStorage(PluginConfig config)
     {
         return config.DatabaseMode switch
         {
-            "sqlite" => new SqliteSkinStorage(Resolve(ModuleDirectory, config.Sqlite.Path), Logger),
-            "mysql" => new MySqlSkinStorage(config.MySql, Logger),
+            "sqlite" => new SqliteSkinStorage(Resolve(ModuleDirectory, config.Sqlite.Path), Logger, config.EnableMusicKitMvpCounter),
+            "mysql" => new MySqlSkinStorage(config.MySql, Logger, config.EnableMusicKitMvpCounter),
             _ => throw new InvalidOperationException("Invalid DatabaseMode after validation.")
         };
     }
@@ -288,6 +294,7 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
             "knife" or "knives" => "astra.reset_knife",
             "glove" or "gloves" => "astra.reset_gloves",
             "agent" or "agents" => "astra.reset_agents",
+            "music" or "musickit" or "musickits" => "astra.reset_music",
             _ => "astra.reset_all"
         };
         command.ReplyToCommand($"{FormatPrefix()} {_text!.Get(messageKey)}");
@@ -358,7 +365,7 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         var gloveSkinCount = catalog.Gloves.Sum(g => g.Skins.Count);
         var agentVoiceCount = catalog.Agents.Count(a => !string.IsNullOrWhiteSpace(a.VoicePrefix));
         command.ReplyToCommand($"{FormatPrefix()} {_text!.Get("astra.debug.summary", _ready, _config.DatabaseMode, _config.Menu.CooldownMilliseconds, _config.Menu.SelectionCooldownMilliseconds)}");
-        command.ReplyToCommand($"{FormatPrefix()} {_text.Get("astra.debug.data", catalog.Weapons.Count, weaponSkinCount, catalog.Knives.Count, knifeSkinCount, catalog.Gloves.Count, gloveSkinCount, catalog.Agents.Count, agentVoiceCount)}");
+        command.ReplyToCommand($"{FormatPrefix()} {_text.Get("astra.debug.data", catalog.Weapons.Count, weaponSkinCount, catalog.Knives.Count, knifeSkinCount, catalog.Gloves.Count, gloveSkinCount, catalog.Agents.Count, agentVoiceCount, catalog.MusicKits.Count)}");
 
         if (player is null || !IsLiveHuman(player))
         {
@@ -369,7 +376,7 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         var agentT = profile.AgentIdsByTeam.TryGetValue("t", out var tAgent) ? tAgent : "none";
         var agentCt = profile.AgentIdsByTeam.TryGetValue("ct", out var ctAgent) ? ctAgent : "none";
         command.ReplyToCommand($"{FormatPrefix()} {_text.Get("astra.debug.player", player.SteamID, player.Team, _skinManager.GetOwnedWeaponDefinitions(player).Count)}");
-        command.ReplyToCommand($"{FormatPrefix()} {_text.Get("astra.debug.selections", profile.WeaponSkins.Count, profile.KnifeId ?? "none", profile.KnifeSkinId ?? "none", profile.GloveSkinId ?? "none", agentT, agentCt)}");
+        command.ReplyToCommand($"{FormatPrefix()} {_text.Get("astra.debug.selections", profile.WeaponSkins.Count, profile.KnifeId ?? "none", profile.KnifeSkinId ?? "none", profile.GloveSkinId ?? "none", agentT, agentCt, profile.MusicKitId ?? "none")}");
     }
 
     private void CommandSeed(CCSPlayerController? player, CommandInfo command)
@@ -586,6 +593,13 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
     private HookResult OnPlayerSpawnPost(EventPlayerSpawn @event, GameEventInfo info)
     {
         var player = @event.Userid;
+        if (_ready && player is { IsValid: true, IsBot: true })
+        {
+            // Bot spawns can make Valve reinitialize controller music for every
+            // player. Reapply after the new entity and inventory have settled.
+            ScheduleMusicKitReapply(0.25f);
+        }
+
         if (_ready && IsLiveHuman(player))
         {
             AddTimer(0.25f, () =>
@@ -598,6 +612,16 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         }
 
         return HookResult.Continue;
+    }
+
+    private void ScheduleMusicKitReapply(float delay)
+    {
+        if (!_ready || _skinManager is null)
+        {
+            return;
+        }
+
+        AddTimer(delay, ApplyMusicKitToLivePlayers, TimerFlags.STOP_ON_MAPCHANGE);
     }
 
     private HookResult OnRoundFreezeEndPre(EventRoundFreezeEnd @event, GameEventInfo info)
@@ -615,6 +639,19 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         return HookResult.Continue;
     }
 
+    private void ApplyMusicKitToLivePlayers()
+    {
+        if (!_ready || _skinManager is null)
+        {
+            return;
+        }
+
+        foreach (var player in Utilities.GetPlayers().Where(IsLiveHuman))
+        {
+            _skinManager.ApplyMusicKitWhenProfileReady(player, logFailures: false);
+        }
+    }
+
     private HookResult OnPlayerDeath(EventPlayerDeath @event, GameEventInfo info)
     {
         var player = @event.Userid;
@@ -630,6 +667,32 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
             if (weapon is not null && weapon.IsValid)
             {
                 _skinManager?.IncrementStatTrak(attacker, weapon);
+            }
+        }
+
+        return HookResult.Continue;
+    }
+
+    private HookResult OnRoundMvp(EventRoundMvp @event, GameEventInfo info)
+    {
+        var player = @event.Userid;
+        if (_ready && _skinManager is not null && player is { IsValid: true } && IsLiveHuman(player))
+        {
+            var hasSelectedMusicKit = _skinManager.TryGetSelectedMusicKitId(player, out var musicKitId);
+            if (hasSelectedMusicKit)
+            {
+                // Keep the scoreboard MVP music consistent with the selected kit.
+                @event.Musickitid = musicKitId;
+                @event.Nomusic = 0;
+            }
+            else
+            {
+                musicKitId = checked((int)@event.Musickitid);
+            }
+
+            if (_config?.EnableMusicKitMvpCounter == true)
+            {
+                @event.Musickitmvps = _skinManager.RecordMusicKitMvp(player, musicKitId);
             }
         }
 
@@ -661,7 +724,7 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
             _menuManager?.Close(player);
             if (_ready && IsLiveHuman(player))
             {
-                _skinManager?.PreloadProfile(player);
+                _skinManager?.ApplyMusicKitWhenProfileReady(player, logFailures: false);
             }
         }
 
@@ -683,14 +746,20 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         var player = Utilities.GetPlayerFromSlot(playerSlot);
         if (IsLiveHuman(player))
         {
-            _skinManager.PreloadProfile(player!);
+            _skinManager.ApplyMusicKitWhenProfileReady(player!, logFailures: false);
             return;
         }
 
-        if (steamId.SteamId64 != 0)
+    }
+
+    private void OnMapStart(string mapName)
+    {
+        if (!_ready || _skinManager is null)
         {
-            _skinManager.PreloadProfile(steamId.SteamId64);
+            return;
         }
+
+        AddTimer(1.0f, ApplyMusicKitToLivePlayers, TimerFlags.STOP_ON_MAPCHANGE);
     }
 
     private void OnTick()
@@ -701,6 +770,28 @@ public sealed class AstraSkinsPlugin : BasePlugin, IPluginConfig<PluginConfig>
         }
 
         _menuManager?.OnTick();
+
+        var now = DateTime.UtcNow;
+        if (now < _nextMusicKitHealthCheckUtc)
+        {
+            return;
+        }
+
+        _nextMusicKitHealthCheckUtc = now.AddSeconds(1);
+        EnsureMusicKitForLivePlayers();
+    }
+
+    private void EnsureMusicKitForLivePlayers()
+    {
+        if (!_ready || _skinManager is null)
+        {
+            return;
+        }
+
+        foreach (var player in Utilities.GetPlayers().Where(IsLiveHuman))
+        {
+            _skinManager.EnsureMusicKitWhenProfileReady(player);
+        }
     }
 
     private void OnPlayerButtonsChanged(CCSPlayerController player, PlayerButtons pressed, PlayerButtons released)

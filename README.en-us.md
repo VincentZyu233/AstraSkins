@@ -23,12 +23,13 @@
 
 ## ✨ Features
 
-- 🎨 **1,400+ weapon skins, 20 knives with 576 finishes, 8 glove types, 63 agents** — all data-driven from JSON, no datasets baked into the code.
+- 🎨 **1,400+ skins, 20 knives with 576 finishes, 8 glove types, 63 agents, 92 music kits** — all data-driven from JSON, no datasets baked into the code.
 - 🕹️ **Built-in WASD menu** — navigate with `W`/`S`, select with `E`. No external menu plugin required.
 - 🔧 **Per-player customization** — custom paint seed, wear/float, name tags, and StatTrak counters via `!seed`, `!wear`, `!nametag`, and `!stattrak`.
-- 🔎 **Search** — `!ws <text>` finds any skin, knife, glove, or agent without scrolling through pages.
+- 🔎 **Search** — `!ws <text>` finds any skin, knife, glove, agent, or music kit without scrolling through pages.
+- 🎵 **Music kits** — pick any of 92 kits from the menu, with an optional per-kit MVP counter shown on the scoreboard.
 - 💾 **Persistent selections** — SQLite or MySQL, keyed by SteamID64. Selections survive reconnects, map changes, and restarts.
-- 🌍 **7 languages** — per-player localization (English, Spanish, Chinese, Portuguese, German, French, Russian).
+- 🌍 **Fixed bilingual UI** — all player-visible menus and feedback use `中文 / English`.
 - 🗣️ **Agent radio voices** — agents keep their voice lines where the CS2 schema exposes the voice data.
 - 🛡️ **Permission gating** — restrict individual skins, knives, gloves, agents, or the whole customization feature to admin flags.
 - ⚙️ **Admin tooling** — hot reload of definitions and a diagnostics command.
@@ -69,7 +70,7 @@
    ```
 
 4. Configure the database in `configs/plugins/AstraSkins/AstraSkins.json` (see [Configuration](#configuration)). SQLite works out of the box; MySQL needs an existing database and user.
-5. Restart the server (or `css_plugins load AstraSkins`). The startup log reports how many skins, knives, gloves, and agents were loaded.
+5. Restart the server (or `css_plugins load AstraSkins`). The startup log reports how many skins, knives, gloves, agents, and music kits were loaded.
 
 ## ⌨️ Commands
 
@@ -78,12 +79,12 @@
 | Command | Description |
 | --- | --- |
 | `!ws` | Open the main skins menu |
-| `!ws <search>` | Search every skin, knife, glove, and agent at once |
+| `!ws <search>` | Search every skin, knife, glove, agent, and music kit at once |
 | `!knife` | Open the knife menu |
 | `!gloves` | Open the gloves menu |
 | `!agents` | Open the agents menu |
 | `!wsrefresh` | Reapply saved selections |
-| `!wsreset [all\|weapons\|knife\|gloves\|agents]` | Reset saved selections, all or per category |
+| `!wsreset [all\|weapons\|knife\|gloves\|agents\|music]` | Reset saved selections, all or per category |
 
 ### 🎨 Customization
 
@@ -122,7 +123,7 @@ The menu items are numbered as a visual guide for orientation; navigation is by 
 
 ## 🔍 Search
 
-With 1,449 weapon skins alone, scrolling is not always the fastest way in. `!ws <search>` opens a flat result list spanning weapon skins, knife finishes, glove finishes, and agents.
+With 1,449 weapon skins alone, scrolling is not always the fastest way in. `!ws <search>` opens a flat result list spanning weapon skins, knife finishes, glove finishes, agents, and music kits.
 
 Every whitespace-separated term has to appear in the entry, so you can narrow down quickly:
 
@@ -131,9 +132,18 @@ Every whitespace-separated term has to appear in the entry, so you can narrow do
 !ws ak redline     → straight to the AK-47 Redline
 !ws marble fade    → every Marble Fade knife
 !ws ct mccoy       → the CT agent
+!ws crimson assault → the matching music kit
 ```
 
 Results respect permissions and are capped at 64 entries; already-equipped items are marked with `*`.
+
+## 🎵 Music Kits
+
+The main menu has a **Music Kit** category with all 92 selectable kits and a "Default / 默认" entry to restore the stock music. The selected kit plays at the usual cues, including round start, MVP, and bomb planted, and persists like every other selection.
+
+With `EnableMusicKitMvpCounter` set to `true`, the plugin tracks each player's MVPs per selected kit and shows the count on the MVP scoreboard like official StatTrak music kits. `!wsreset music` or a full reset clears the count.
+
+If `data/music_kits.json` is missing, the category simply stays hidden.
 
 ## ⚙️ Configuration
 
@@ -155,7 +165,8 @@ Results respect permissions and are capped at 64 entries; already-equipped items
     "SslMode": "required"
   },
   "Menu": {
-    "ItemsPerPage": 6,
+    "TextSize": "medium",
+    "ItemsPerPage": 7,
     "TimeoutSeconds": 25,
     "CooldownMilliseconds": 180,
     "SelectionCooldownMilliseconds": 900,
@@ -166,11 +177,13 @@ Results respect permissions and are capped at 64 entries; already-equipped items
     "Permission": "",
     "MaxNameTagLength": 20
   },
+  "EnableMusicKitMvpCounter": false,
   "Definitions": {
     "Weapons": "data/weapons.json",
     "Knives": "data/knives.json",
     "Gloves": "data/gloves.json",
     "Agents": "data/agents.json",
+    "MusicKits": "data/music_kits.json",
     "Categories": "data/categories.json"
   },
   "EnableAdminReloadCommand": true,
@@ -183,7 +196,8 @@ Results respect permissions and are capped at 64 entries; already-equipped items
 | Key | What it does |
 | --- | --- |
 | `DatabaseMode` | `"sqlite"` or `"mysql"` — required, validated at startup |
-| `Menu.ItemsPerPage` | Visible menu rows (3–6) |
+| `Menu.TextSize` | Menu size: `small`, `medium`, or `large` |
+| `Menu.ItemsPerPage` | Visible menu rows (3–7) |
 | `Menu.TimeoutSeconds` | Menu auto-closes after this many idle seconds |
 | `Menu.CooldownMilliseconds` | Minimum delay between menu key presses |
 | `Menu.SelectionCooldownMilliseconds` | Minimum delay between skin selections |
@@ -191,6 +205,7 @@ Results respect permissions and are capped at 64 entries; already-equipped items
 | `Customization.Enabled` | Master switch for `!seed` / `!wear` / `!nametag` |
 | `Customization.Permission` | Restrict customization to a flag; empty = everyone |
 | `Customization.MaxNameTagLength` | Name tag cap, 4–32 (default 20 matches the real game) |
+| `EnableMusicKitMvpCounter` | Track per-player MVP counts for selected music kits |
 
 ### 🗃️ SQLite
 
@@ -210,7 +225,7 @@ The database and user must already exist; the plugin creates its table on startu
 
 ## 🌐 Localization
 
-Every player-facing message and menu label is localized per player through CounterStrikeSharp's language system. Players pick their language with `css_lang <language>` (e.g. `css_lang es`); missing translations fall back to the server language.
+Every player-facing message and menu label is fixed to `中文 / English`, regardless of the player's `css_lang` setting. Missing Chinese falls back to English, and identical names appear only once.
 
 Shipped: `en` English · `es` Spanish · `zh` Chinese (Simplified) · `pt` Portuguese · `de` German · `fr` French · `ru` Russian — flat key/value JSON files in `lang/`.
 
@@ -231,6 +246,7 @@ Currently packaged:
 | Glove types | 8 |
 | Glove skins | 94 |
 | Agents | 63 |
+| Music kits | 92 |
 
 To regenerate the data after a CS2 update, run the included generator — it pulls the latest `items_game.txt` and translation data automatically:
 

@@ -12,6 +12,7 @@ public sealed class PluginConfig : BasePluginConfig
     public MySqlConfig MySql { get; set; } = new();
     public MenuConfig Menu { get; set; } = new();
     public CustomizationConfig Customization { get; set; } = new();
+    public bool EnableMusicKitMvpCounter { get; set; } = false;
     public DefinitionPathConfig Definitions { get; set; } = new();
     public bool EnableAdminReloadCommand { get; set; } = true;
     public string AdminReloadPermission { get; set; } = "@css/config";
@@ -36,7 +37,8 @@ public sealed class MySqlConfig
 
 public sealed class MenuConfig
 {
-    public int ItemsPerPage { get; set; } = 6;
+    public string TextSize { get; set; } = "medium";
+    public int ItemsPerPage { get; set; } = 7;
     public int TimeoutSeconds { get; set; } = 25;
     public int CooldownMilliseconds { get; set; } = 180;
     public int SelectionCooldownMilliseconds { get; set; } = 900;
@@ -57,5 +59,6 @@ public sealed class DefinitionPathConfig
     public string Knives { get; set; } = "data/knives.json";
     public string Gloves { get; set; } = "data/gloves.json";
     public string Agents { get; set; } = "data/agents.json";
+    public string MusicKits { get; set; } = "data/music_kits.json";
     public string? Categories { get; set; } = "data/categories.json";
 }

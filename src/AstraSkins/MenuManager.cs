@@ -17,8 +17,8 @@ public sealed class MenuManager
     private readonly Dictionary<int, float> _savedVelocity = new();
 
     private const int InitialInputDelayMilliseconds = 200;
-    private const int MaxTitleLength = 46;
-    private const int MaxItemLabelLength = 34;
+    private const int MaxTitleWidth = 46;
+    private const int MaxItemLabelWidth = 34;
     private const int MaxSearchResults = 64;
 
     public MenuManager(SkinManager skinManager, PluginConfig config, BilingualText text, ILogger logger)
@@ -269,6 +269,7 @@ public sealed class MenuManager
             MenuView.GloveSkins => BuildGloveSkinOptions(state),
             MenuView.AgentTeams => BuildAgentTeamOptions(state),
             MenuView.Agents => BuildAgentOptions(state),
+            MenuView.MusicKits => BuildMusicKitOptions(state),
             MenuView.Search => BuildSearchOptions(state),
             _ => Array.Empty<MenuOption>()
         };
@@ -330,6 +331,15 @@ public sealed class MenuManager
             var current = Utilities.GetPlayerFromSlot(state.Slot);
             if (current is not null) ChangeView(current, state, MenuView.AgentTeams, push: true);
         }));
+
+        if (_skinManager.Catalog.MusicKits.Count > 0)
+        {
+            options.Add(new MenuOption($"{visualIndex++}. {_text.Get("menu.music")}", () =>
+            {
+                var current = Utilities.GetPlayerFromSlot(state.Slot);
+                if (current is not null) ChangeView(current, state, MenuView.MusicKits, push: true);
+            }));
+        }
 
         return options;
     }
@@ -419,6 +429,70 @@ public sealed class MenuManager
             var player = Utilities.GetPlayerFromSlot(state.Slot);
             if (player is not null) ChangeView(player, state, MenuView.AgentTeams, push: true);
         }));
+        if (_skinManager.Catalog.MusicKits.Count > 0)
+        {
+            options.Add(new MenuOption(_text.Get("menu.music"), () =>
+            {
+                var player = Utilities.GetPlayerFromSlot(state.Slot);
+                if (player is not null) ChangeView(player, state, MenuView.MusicKits, push: true);
+            }));
+        }
+        return options;
+    }
+
+    private IReadOnlyList<MenuOption> BuildMusicKitOptions(PlayerMenuState state)
+    {
+        var player = Utilities.GetPlayerFromSlot(state.Slot);
+        if (player is null)
+        {
+            return Array.Empty<MenuOption>();
+        }
+
+        var profile = _skinManager.GetProfile(player);
+        static string Name(MusicKitDefinition kit) =>
+            BilingualText.Name(kit.DisplayNameZh, kit.DisplayName);
+
+        var options = new List<MenuOption>
+        {
+            new(
+                _text.Get("menu.music.default"),
+                () =>
+                {
+                    var current = Utilities.GetPlayerFromSlot(state.Slot);
+                    if (current is null) return;
+                    _skinManager.ClearMusicKit(current);
+                    current.PrintToChat($"{AstraSkinsPlugin.FormatPrefix()} {_text.Get("menu.equipped", _text.GetArgument("menu.music.default"))}");
+                    InvalidateOptions(state);
+                },
+                string.IsNullOrWhiteSpace(profile.MusicKitId),
+                ThrottleSelection: true)
+        };
+
+        options.AddRange(_skinManager.Catalog.MusicKits
+            .Where(k => _skinManager.CanUse(player, k))
+            .Select(k => new MenuOption(
+                Name(k),
+                () =>
+                {
+                    var current = Utilities.GetPlayerFromSlot(state.Slot);
+                    if (current is null) return;
+                    if (k.Id.Equals(_skinManager.GetProfile(current).MusicKitId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        state.LastInteractionUtc = DateTime.UtcNow;
+                        Render(current, state);
+                        return;
+                    }
+
+                    var saved = _skinManager.SetMusicKit(current, k.Id);
+                    current.PrintToChat(saved
+                        ? $"{AstraSkinsPlugin.FormatPrefix()} {_text.Get("menu.equipped", BilingualText.Arg(k.DisplayNameZh, k.DisplayName))}"
+                        : $"{AstraSkinsPlugin.FormatPrefix()} {_text.Get("menu.save_failed")}");
+                    state.LastInteractionUtc = DateTime.UtcNow;
+                    Render(current, state);
+                },
+                k.Id.Equals(profile.MusicKitId, StringComparison.OrdinalIgnoreCase),
+                ThrottleSelection: true)));
+
         return options;
     }
 
@@ -786,6 +860,26 @@ public sealed class MenuManager
             Add(chineseLabel, englishLabel, selected, current => _skinManager.SetAgent(current, team, agentId));
         }
 
+        foreach (var kit in catalog.MusicKits)
+        {
+            if (options.Count >= MaxSearchResults)
+            {
+                return options;
+            }
+
+            var englishLabel = kit.DisplayName;
+            var chineseLabel = BilingualText.Arg(kit.DisplayNameZh, kit.DisplayName).Zh?.ToString() ?? kit.DisplayName;
+            var searchText = $"{chineseLabel} {englishLabel} 音乐盒 music music kit";
+            if (!MatchesAllTerms(searchText, terms) || !_skinManager.CanUse(player, kit))
+            {
+                continue;
+            }
+
+            var kitId = kit.Id;
+            var selected = kitId.Equals(profile.MusicKitId, StringComparison.OrdinalIgnoreCase);
+            Add(chineseLabel, englishLabel, selected, current => _skinManager.SetMusicKit(current, kitId));
+        }
+
         return options;
     }
 
@@ -811,7 +905,7 @@ public sealed class MenuManager
 
         var options = GetOptions(state);
         state.Cursor = Math.Clamp(state.Cursor, 0, Math.Max(0, options.Count - 1));
-        var visibleItems = Math.Clamp(_config.Menu.ItemsPerPage, 3, 6);
+        var visibleItems = Math.Clamp(_config.Menu.ItemsPerPage, 3, 7);
         var start = Math.Max(0, state.Cursor - visibleItems / 2);
         if (start + visibleItems > options.Count)
         {
@@ -821,16 +915,17 @@ public sealed class MenuManager
         var end = Math.Min(options.Count, start + visibleItems);
 
         var title = GetTitle(state);
+        var textSizeClass = GetTextSizeClass();
         var lines = new List<string>
         {
             state.View == MenuView.Main
-                ? $"<b><font color='#f0b65a'>{WebUtility.HtmlEncode(BilingualText.Truncate(title, MaxTitleLength))}</font></b>"
-                : $"<b><font color='#8bdcff'>{WebUtility.HtmlEncode(BilingualText.Truncate(title, MaxTitleLength))}</font></b> <font color='#d7f08a'>{state.Cursor + 1}</font>/<font color='#e2e2e2'>{Math.Max(1, options.Count)}</font>",
+                ? $"<b><font class='{textSizeClass}' color='#f0b65a'>{WebUtility.HtmlEncode(BilingualText.Truncate(title, MaxTitleWidth))}</font></b>"
+                : $"<b><font class='{textSizeClass}' color='#8bdcff'>{WebUtility.HtmlEncode(BilingualText.Truncate(title, MaxTitleWidth))}</font></b> <font class='{textSizeClass}' color='#d7f08a'>{state.Cursor + 1}</font>/<font class='{textSizeClass}' color='#e2e2e2'>{Math.Max(1, options.Count)}</font>",
         };
 
         if (options.Count == 0)
         {
-            lines.Add($"<font color='#ffb3b3'>{WebUtility.HtmlEncode(_text.Get("menu.no_entries"))}</font>");
+            lines.Add($"<font class='{textSizeClass}' color='#ffb3b3'>{WebUtility.HtmlEncode(_text.Get("menu.no_entries"))}</font>");
         }
         else
         {
@@ -840,14 +935,25 @@ public sealed class MenuManager
                 var prefix = index == state.Cursor ? "> " : string.Empty;
                 var selected = option.IsSelected ? " *" : string.Empty;
                 var color = index == state.Cursor ? "#f7d774" : "#ffffff";
-                lines.Add($"<font color='{color}'>{prefix}{WebUtility.HtmlEncode(BilingualText.Truncate(option.Label, MaxItemLabelLength))}{selected}</font>");
+                var labelBudget = MaxItemLabelWidth - BilingualText.DisplayWidth(prefix) - BilingualText.DisplayWidth(selected);
+                lines.Add($"<font class='{textSizeClass}' color='{color}'>{prefix}{WebUtility.HtmlEncode(BilingualText.Truncate(option.Label, labelBudget))}{selected}</font>");
             }
         }
 
         lines.Add(state.View == MenuView.Main
-            ? "<small><small><font color='#f0b65a'>W/S | E | R</font></small></small>"
-            : "<small><small><font color='#f0b65a'>W/S | E | Shift | R</font></small></small>");
+            ? "<font class='fontSize-s' color='#f0b65a'>W/S | E | R</font>"
+            : "<font class='fontSize-s' color='#f0b65a'>W/S | E | Shift | R</font>");
         SafePrint(player, string.Join("<br>", lines));
+    }
+
+    private string GetTextSizeClass()
+    {
+        return _config.Menu.TextSize.Trim().ToLowerInvariant() switch
+        {
+            "small" => "fontSize-s",
+            "large" => "fontSize-l",
+            _ => "fontSize-m"
+        };
     }
 
     private string GetTitle(PlayerMenuState state)
@@ -863,6 +969,7 @@ public sealed class MenuManager
             MenuView.GloveTypes => _text.Get("menu.title.gloves"),
             MenuView.GloveSkins => state.Glove is null ? _text.Get("menu.title.glove_skins") : BilingualText.Name(state.Glove.DisplayNameZh, state.Glove.DisplayName),
             MenuView.AgentTeams => _text.Get("menu.title.agent_teams"),
+            MenuView.MusicKits => _text.Get("menu.music"),
             MenuView.Search => _text.Get("menu.title.search", state.SearchQuery ?? string.Empty),
             MenuView.Agents => state.AgentTeam == "ct"
                 ? _text.Get("menu.title.agents_ct")

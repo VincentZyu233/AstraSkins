@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using System.Text.Json;
 
 namespace AstraSkins;
@@ -27,6 +28,12 @@ public sealed class BilingualText
         var zhArguments = arguments.Select(argument => argument is Argument value ? value.Zh : argument).ToArray();
         var enArguments = arguments.Select(argument => argument is Argument value ? value.En : argument).ToArray();
         return Combine(FormatTemplate(chineseTemplate, zhArguments), FormatTemplate(englishTemplate, enArguments));
+    }
+
+    public Argument GetArgument(string key)
+    {
+        var english = Lookup(_en, key, key);
+        return new Argument(Lookup(_zh, key, english), english);
     }
 
     public static Argument Arg(string? displayNameZh, string? displayName)
@@ -59,44 +66,105 @@ public sealed class BilingualText
         return en.Length == 0 ? zh : $"{zh} / {en}";
     }
 
-    public static string Truncate(string value, int maxTextElements)
+    public static string Truncate(string value, int maxDisplayWidth)
     {
-        if (maxTextElements <= 0 || string.IsNullOrEmpty(value))
+        if (maxDisplayWidth <= 0 || string.IsNullOrEmpty(value))
         {
             return string.Empty;
         }
 
-        var elements = StringInfo.ParseCombiningCharacters(value);
-        if (elements.Length <= maxTextElements)
+        if (DisplayWidth(value) <= maxDisplayWidth)
         {
             return value;
         }
 
         const string separator = " / ";
         var separatorIndex = value.IndexOf(separator, StringComparison.Ordinal);
-        if (separatorIndex > 0 && maxTextElements > separator.Length + 7)
+        if (separatorIndex > 0 && maxDisplayWidth > separator.Length + 7)
         {
-            var contentBudget = maxTextElements - separator.Length;
+            var contentBudget = maxDisplayWidth - separator.Length;
             var chineseBudget = contentBudget / 2;
             var englishBudget = contentBudget - chineseBudget;
             return TruncateSingle(value[..separatorIndex], chineseBudget) + separator +
                    TruncateSingle(value[(separatorIndex + separator.Length)..], englishBudget);
         }
 
-        return TruncateSingle(value, maxTextElements);
+        return TruncateSingle(value, maxDisplayWidth);
     }
 
-    private static string TruncateSingle(string value, int maxTextElements)
+    public static int DisplayWidth(string? value)
     {
-        var elements = StringInfo.ParseCombiningCharacters(value);
-        if (elements.Length <= maxTextElements)
+        if (string.IsNullOrEmpty(value))
+        {
+            return 0;
+        }
+
+        var width = 0;
+        var enumerator = StringInfo.GetTextElementEnumerator(value);
+        while (enumerator.MoveNext())
+        {
+            width += TextElementWidth(enumerator.GetTextElement());
+        }
+
+        return width;
+    }
+
+    private static string TruncateSingle(string value, int maxDisplayWidth)
+    {
+        if (DisplayWidth(value) <= maxDisplayWidth)
         {
             return value;
         }
 
         const string ellipsis = "...";
-        var keep = Math.Max(0, maxTextElements - ellipsis.Length);
-        return keep == 0 ? ellipsis[..Math.Min(maxTextElements, ellipsis.Length)] : value[..elements[keep]] + ellipsis;
+        var contentBudget = Math.Max(0, maxDisplayWidth - ellipsis.Length);
+        if (contentBudget == 0)
+        {
+            return ellipsis[..Math.Min(maxDisplayWidth, ellipsis.Length)];
+        }
+
+        var result = new StringBuilder();
+        var used = 0;
+        var enumerator = StringInfo.GetTextElementEnumerator(value);
+        while (enumerator.MoveNext())
+        {
+            var element = enumerator.GetTextElement();
+            var width = TextElementWidth(element);
+            if (used + width > contentBudget)
+            {
+                break;
+            }
+
+            result.Append(element);
+            used += width;
+        }
+
+        return result.Append(ellipsis).ToString();
+    }
+
+    private static int TextElementWidth(string element)
+    {
+        if (string.IsNullOrEmpty(element))
+        {
+            return 0;
+        }
+
+        var rune = Rune.GetRuneAt(element, 0);
+        var value = rune.Value;
+        return value >= 0x1100 &&
+               (value <= 0x115F ||
+                value is 0x2329 or 0x232A ||
+                (value >= 0x2E80 && value <= 0xA4CF && value != 0x303F) ||
+                (value >= 0xAC00 && value <= 0xD7A3) ||
+                (value >= 0xF900 && value <= 0xFAFF) ||
+                (value >= 0xFE10 && value <= 0xFE19) ||
+                (value >= 0xFE30 && value <= 0xFE6F) ||
+                (value >= 0xFF00 && value <= 0xFF60) ||
+                (value >= 0xFFE0 && value <= 0xFFE6) ||
+                (value >= 0x1F000 && value <= 0x1FAFF) ||
+                (value >= 0x20000 && value <= 0x3FFFD))
+            ? 2
+            : 1;
     }
 
     private static IReadOnlyDictionary<string, string> Load(string path)
