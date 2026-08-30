@@ -166,7 +166,7 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
   },
   "Menu": {
     "TextSize": "small",
-    "ItemsPerPage": 7,
+    "ItemsPerPage": 5,
     "TimeoutSeconds": 25,
     "CooldownMilliseconds": 180,
     "SelectionCooldownMilliseconds": 900,

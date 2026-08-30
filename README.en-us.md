@@ -166,7 +166,7 @@ If `data/music_kits.json` is missing, the category simply stays hidden.
   },
   "Menu": {
     "TextSize": "small",
-    "ItemsPerPage": 7,
+    "ItemsPerPage": 5,
     "TimeoutSeconds": 25,
     "CooldownMilliseconds": 180,
     "SelectionCooldownMilliseconds": 900,
