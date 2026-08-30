@@ -1,6 +1,9 @@
+> **[📖 English](README.en-us.md)**
+> **[📖 简体中文(大陆)](README.md)**
+
 <div align="center">
 
-# Astra Skins
+# 🎨 Astra Skins
 
 [![Upstream Repository](https://img.shields.io/badge/GitHub-Upstream%20Repository-181717?logo=github&style=for-the-badge)](https://github.com/Ayrton09/AstraSkins)
 
@@ -16,7 +19,7 @@
 
 ---
 
-## Features
+## ✨ Features
 
 - 🎨 **1,400+ weapon skins, 20 knives with 576 finishes, 8 glove types, 63 agents** — all data-driven from JSON, no datasets baked into the code.
 - 🕹️ **Built-in WASD menu** — navigate with `W`/`S`, select with `E`. No external menu plugin required.
@@ -28,12 +31,12 @@
 - 🛡️ **Permission gating** — restrict individual skins, knives, gloves, agents, or the whole customization feature to admin flags.
 - ⚙️ **Admin tooling** — hot reload of definitions and a diagnostics command.
 
-## Requirements
+## 📋 Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) `1.0.369` or newer (with Metamod:Source), running on `.NET 10`.
 - SQLite (zero setup) or a MySQL server, selected explicitly in the config.
 
-## Installation
+## 📦 Installation
 
 1. Install [Metamod:Source](https://www.sourcemm.net/) and [CounterStrikeSharp](https://docs.cssharp.dev/docs/guides/getting-started.html) on your CS2 dedicated server.
 2. **Required:** edit `addons/counterstrikesharp/configs/core.json` and set:
@@ -66,9 +69,9 @@
 4. Configure the database in `configs/plugins/AstraSkins/AstraSkins.json` (see [Configuration](#configuration)). SQLite works out of the box; MySQL needs an existing database and user.
 5. Restart the server (or `css_plugins load AstraSkins`). The startup log reports how many skins, knives, gloves, and agents were loaded.
 
-## Commands
+## ⌨️ Commands
 
-### Players
+### 👤 Players
 
 | Command | Description |
 | --- | --- |
@@ -80,7 +83,7 @@
 | `!wsrefresh` | Reapply saved selections |
 | `!wsreset [all\|weapons\|knife\|gloves\|agents]` | Reset saved selections, all or per category |
 
-### Customization
+### 🎨 Customization
 
 | Command | Description |
 | --- | --- |
@@ -95,7 +98,7 @@ StatTrak works the same way: enable it on a weapon or knife and the counter goes
 
 > **Tip:** seeds only change finishes whose pattern placement varies — Case Hardened, Crimson Web, Marble Fade, Fade. Most other skins look identical on every seed.
 
-### Admin
+### 🛡️ Admin
 
 | Command | Default permission | Description |
 | --- | --- | --- |
@@ -104,7 +107,7 @@ StatTrak works the same way: enable it on a weapon or knife and the counter goes
 
 Both can be disabled entirely in the config.
 
-## Menu Controls
+## 🎮 Menu Controls
 
 | Key | Action |
 | --- | --- |
@@ -115,7 +118,7 @@ Both can be disabled entirely in the config.
 
 The menu items are numbered as a visual guide for orientation; navigation is by keys, not numbers. While the menu is open the player is held in place. Heads up: `E` still performs its normal in-world action (open doors, pick up weapons, defuse), so avoid confirming a selection while standing on the bomb.
 
-## Search
+## 🔍 Search
 
 With 1,449 weapon skins alone, scrolling is not always the fastest way in. `!ws <search>` opens a flat result list spanning weapon skins, knife finishes, glove finishes, and agents.
 
@@ -130,7 +133,7 @@ Every whitespace-separated term has to appear in the entry, so you can narrow do
 
 Results respect permissions and are capped at 64 entries; already-equipped items are marked with `*`.
 
-## Configuration
+## ⚙️ Configuration
 
 `configs/plugins/AstraSkins/AstraSkins.json` — the defaults are safe to publish and use placeholder credentials:
 
@@ -187,7 +190,7 @@ Results respect permissions and are capped at 64 entries; already-equipped items
 | `Customization.Permission` | Restrict customization to a flag; empty = everyone |
 | `Customization.MaxNameTagLength` | Name tag cap, 4–32 (default 20 matches the real game) |
 
-### SQLite
+### 🗃️ SQLite
 
 ```json
 { "DatabaseMode": "sqlite", "Sqlite": { "Path": "data/astra_skins.sqlite" } }
@@ -195,7 +198,7 @@ Results respect permissions and are capped at 64 entries; already-equipped items
 
 The plugin creates the schema on startup — nothing to install. Note the default path lives inside the plugin folder: **back up the `.sqlite` file before redeploying the plugin directory**, or point `Path` somewhere outside it.
 
-### MySQL
+### 🛢️ MySQL
 
 ```json
 { "DatabaseMode": "mysql", "MySql": { "Host": "…", "Port": 3306, "Database": "astra_skins", "Username": "astra_skins", "Password": "…", "SslMode": "required" } }
@@ -203,7 +206,7 @@ The plugin creates the schema on startup — nothing to install. Note the defaul
 
 The database and user must already exist; the plugin creates its table on startup. `SslMode` accepts `none`, `preferred`, `required` (default), `verifyca`, or `verifyfull` — keep `required` for remote databases so credentials travel encrypted; use `preferred` or `none` only if your MySQL server has TLS disabled.
 
-## Localization
+## 🌐 Localization
 
 Every player-facing message and menu label is localized per player through CounterStrikeSharp's language system. Players pick their language with `css_lang <language>` (e.g. `css_lang es`); missing translations fall back to the server language.
 
@@ -211,7 +214,7 @@ Shipped: `en` English · `es` Spanish · `zh` Chinese (Simplified) · `pt` Portu
 
 Wrong or missing translation? PRs welcome — edit the matching `lang/*.json`. To add a language, copy `en.json` to `<culture>.json` and translate the values.
 
-## Cosmetic Data
+## 🎭 Cosmetic Data
 
 All cosmetic content lives in `data/*.json` and is validated at startup and on `!wsreload` — malformed JSON, duplicate IDs, unknown weapon entities, missing fields, and broken category references are skipped with clear log messages.
 
@@ -233,21 +236,21 @@ To regenerate the data after a CS2 update, run the included generator — it pul
 python tools/generate_definitions.py --output data
 ```
 
-## Gamedata
+## 🧩 Gamedata
 
 Copy `gamedata/astra_skins.json` to `addons/counterstrikesharp/gamedata/`. It contains the single memory signature used to apply paint attributes visually.
 
 CS2 updates can break this signature. When that happens the plugin keeps running and logs a clear error instead of crashing — update the signature (or grab an updated release) to restore skin rendering.
 
-## Building from Source
+## 🔨 Building from Source
 
 ```bash
 dotnet build -c Release
 ```
 
-Requires the .NET 10 SDK. Deployable output lands in `bin/Release/net10.0/`.
+Requires the .NET 10 SDK. Deployable output lands in `src/AstraSkins/bin/Release/net10.0/`.
 
-## Troubleshooting
+## 🛠️ Troubleshooting
 
 | Symptom | Fix |
 | --- | --- |
@@ -257,10 +260,10 @@ Requires the .NET 10 SDK. Deployable output lands in `bin/Release/net10.0/`.
 | `!wsreload` / `!wsdebug` say no permission | Add your SteamID to `configs/admins.json` with the `@css/config` flag |
 | `!seed` looks like it does nothing | The held skin's pattern doesn't vary by seed — try Case Hardened or Crimson Web |
 
-## Disclaimer
+## ⚠️ Disclaimer
 
 Server-side skin plugins conflict with Valve's [server guidelines](https://blog.counter-strike.net/index.php/server_guidelines/). Running this on a public server with a GSLT carries a token-ban risk that you accept as the operator. Use at your own discretion.
 
-## License
+## 📄 License
 
 [MIT](LICENSE) © Ayrton

@@ -94,10 +94,11 @@ def main():
     if not any("秋叶原" in value for value in searchable) or not any("akihabara" in value for value in searchable):
         raise ValueError("Chinese/English search index smoke test failed")
 
-    sources = "\n".join(path.read_text(encoding="utf-8") for path in root.glob("*.cs"))
+    source_dir = root / "src" / "AstraSkins"
+    sources = "\n".join(path.read_text(encoding="utf-8") for path in source_dir.rglob("*.cs"))
     if "Localizer.ForPlayer" in sources or "_localizer.ForPlayer" in sources:
         raise ValueError("player-language-dependent localization remains in C# sources")
-    menu = (root / "MenuManager.cs").read_text(encoding="utf-8")
+    menu = (source_dir / "MenuManager.cs").read_text(encoding="utf-8")
     if "HtmlEncode(BilingualText.Truncate(" not in menu:
         raise ValueError("menu text must be truncated before HTML encoding")
 

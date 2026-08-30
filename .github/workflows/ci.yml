@@ -30,7 +30,7 @@ jobs:
         if: github.ref_type == 'tag'
         run: |
           expected="${GITHUB_REF_NAME#v}"
-          actual=$(grep -oP 'ModuleVersion => "\K[^"]+' AstraSkinsPlugin.cs)
+          actual=$(grep -oP 'ModuleVersion => "\K[^"]+' src/AstraSkins/AstraSkinsPlugin.cs)
           if [[ "$expected" != "$actual" ]]; then
             echo "Tag v$expected does not match ModuleVersion $actual" >&2
             exit 1

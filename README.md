@@ -1,6 +1,9 @@
+> **[📖 English](README.en-us.md)**
+> **[📖 简体中文(大陆)](README.md)**
+
 <div align="center">
 
-# Astra Skins
+# 🎨 Astra Skins
 
 [![上游仓库](https://img.shields.io/badge/GitHub-Upstream%20Repository-181717?logo=github&style=for-the-badge)](https://github.com/Ayrton09/AstraSkins)
 
@@ -16,7 +19,7 @@
 
 ---
 
-## 功能特性
+## ✨ 功能特性
 
 - 🎨 **1,400+ 款武器皮肤、20 种刀具及其 576 款外观、8 种手套、63 名探员** — 全部由 JSON 数据驱动，代码中不内置数据集。
 - 🕹️ **内置 WASD 菜单** — 使用 `W`/`S` 导航，按 `E` 选择，无需外部菜单插件。
@@ -28,12 +31,12 @@
 - 🛡️ **权限控制** — 可将单个皮肤、刀具、手套、探员或整个自定义功能限制为指定管理员权限。
 - ⚙️ **管理工具** — 支持热重载定义和诊断命令。
 
-## 环境要求
+## 📋 环境要求
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) `1.0.369` 或更高版本（配合 Metamod:Source），运行于 `.NET 10`。
 - SQLite（无需配置）或 MySQL 服务器，需在配置中明确选择。
 
-## 安装
+## 📦 安装
 
 1. 在 CS2 专用服务器上安装 [Metamod:Source](https://www.sourcemm.net/) 和 [CounterStrikeSharp](https://docs.cssharp.dev/docs/guides/getting-started.html)。
 2. **必需：**编辑 `addons/counterstrikesharp/configs/core.json` 并设置：
@@ -66,9 +69,9 @@
 4. 在 `configs/plugins/AstraSkins/AstraSkins.json` 中配置数据库（参见[配置](#配置)）。SQLite 开箱即用；MySQL 需要预先存在的数据库和用户。
 5. 重启服务器（或执行 `css_plugins load AstraSkins`）。启动日志会报告加载的皮肤、刀具、手套和探员数量。
 
-## 命令
+## ⌨️ 命令
 
-### 玩家命令
+### 👤 玩家命令
 
 | 命令 | 说明 |
 | --- | --- |
@@ -80,7 +83,7 @@
 | `!wsrefresh` | 重新应用已保存的选择 |
 | `!wsreset [all\|weapons\|knife\|gloves\|agents]` | 重置全部或指定分类的已保存选择 |
 
-### 自定义
+### 🎨 自定义
 
 | 命令 | 说明 |
 | --- | --- |
@@ -95,7 +98,7 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
 
 > **提示：**图案模板只会改变图案位置可变的外观，例如表面淬火、深红之网、大理石渐变和渐变之色。大多数其他皮肤在不同模板下看起来完全相同。
 
-### 管理员命令
+### 🛡️ 管理员命令
 
 | 命令 | 默认权限 | 说明 |
 | --- | --- | --- |
@@ -104,7 +107,7 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
 
 这两个命令都可以在配置中完全禁用。
 
-## 菜单操作
+## 🎮 菜单操作
 
 | 按键 | 操作 |
 | --- | --- |
@@ -115,7 +118,7 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
 
 菜单项目带有编号，仅作为辨认位置的视觉提示；实际使用按键而非数字导航。菜单打开时玩家会被固定在原地。请注意：`E` 仍会执行游戏世界中的常规动作（开门、拾取武器、拆弹），因此站在炸弹上时不要确认选择。
 
-## 搜索
+## 🔍 搜索
 
 仅武器皮肤就有 1,449 款，逐页浏览并不总是最快的方式。`!ws <搜索内容>` 会打开一个扁平结果列表，涵盖武器皮肤、刀具外观、手套外观和探员。
 
@@ -130,7 +133,7 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
 
 搜索结果会遵守权限限制，最多显示 64 项；已经装备的物品会以 `*` 标记。
 
-## 配置
+## ⚙️ 配置
 
 `configs/plugins/AstraSkins/AstraSkins.json` — 默认配置可安全公开，并使用占位凭据：
 
@@ -187,7 +190,7 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
 | `Customization.Permission` | 将自定义限制为某项权限；留空 = 所有人 |
 | `Customization.MaxNameTagLength` | 名称标签长度上限，4–32（默认 20，与游戏实际限制一致） |
 
-### SQLite
+### 🗃️ SQLite
 
 ```json
 { "DatabaseMode": "sqlite", "Sqlite": { "Path": "data/astra_skins.sqlite" } }
@@ -195,7 +198,7 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
 
 插件会在启动时创建 schema，无需安装任何内容。请注意，默认路径位于插件目录内部：**重新部署插件目录前请备份 `.sqlite` 文件**，或者将 `Path` 指向目录外部。
 
-### MySQL
+### 🛢️ MySQL
 
 ```json
 { "DatabaseMode": "mysql", "MySql": { "Host": "…", "Port": 3306, "Database": "astra_skins", "Username": "astra_skins", "Password": "…", "SslMode": "required" } }
@@ -203,7 +206,7 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
 
 数据库和用户必须预先存在；插件会在启动时创建数据表。`SslMode` 可使用 `none`、`preferred`、`required`（默认）、`verifyca` 或 `verifyfull` — 远程数据库应保持 `required`，确保凭据加密传输；仅当 MySQL 服务器禁用 TLS 时才使用 `preferred` 或 `none`。
 
-## 本地化
+## 🌐 本地化
 
 所有面向玩家的消息和菜单标签都会通过 CounterStrikeSharp 的语言系统按玩家本地化。玩家可使用 `css_lang <语言>` 选择语言（例如 `css_lang es`）；缺失翻译会回退到服务器语言。
 
@@ -211,7 +214,7 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
 
 发现错误或缺失的翻译？欢迎提交 PR — 编辑对应的 `lang/*.json` 即可。若要添加语言，请将 `en.json` 复制为 `<culture>.json` 并翻译其中的值。
 
-## 饰品数据
+## 🎭 饰品数据
 
 所有饰品内容都位于 `data/*.json`，并在启动及执行 `!wsreload` 时验证；格式错误的 JSON、重复 ID、未知武器实体、缺失字段和损坏的分类引用都会被跳过，并留下清晰的日志消息。
 
@@ -233,21 +236,21 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
 python tools/generate_definitions.py --output data
 ```
 
-## 游戏数据
+## 🧩 游戏数据
 
 将 `gamedata/astra_skins.json` 复制到 `addons/counterstrikesharp/gamedata/`。其中包含用于以可视方式应用涂装属性的唯一内存签名。
 
 CS2 更新可能导致该签名失效。发生这种情况时，插件会继续运行并记录清晰的错误，而不会崩溃；更新签名（或获取更新后的发行版）即可恢复皮肤渲染。
 
-## 从源代码构建
+## 🔨 从源代码构建
 
 ```bash
 dotnet build -c Release
 ```
 
-需要 .NET 10 SDK。可部署输出位于 `bin/Release/net10.0/`。
+需要 .NET 10 SDK。可部署输出位于 `src/AstraSkins/bin/Release/net10.0/`。
 
-## 故障排查
+## 🛠️ 故障排查
 
 | 症状 | 解决方法 |
 | --- | --- |
@@ -257,10 +260,10 @@ dotnet build -c Release
 | `!wsreload` / `!wsdebug` 提示无权限 | 在 `configs/admins.json` 中添加你的 SteamID，并授予 `@css/config` 权限 |
 | `!seed` 看起来没有效果 | 手持皮肤的图案不会随模板变化 — 请尝试 Case Hardened 或 Crimson Web |
 
-## 免责声明
+## ⚠️ 免责声明
 
 服务端皮肤插件与 Valve 的[服务器准则](https://blog.counter-strike.net/index.php/server_guidelines/)存在冲突。在使用 GSLT 的公共服务器上运行本插件会带来令牌被封禁的风险，服务器运营者需自行承担。请谨慎使用。
 
-## 许可证
+## 📄 许可证
 
 [MIT](LICENSE) © Ayrton

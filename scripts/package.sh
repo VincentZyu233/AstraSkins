@@ -5,7 +5,7 @@
 set -euo pipefail
 
 VERSION="${1:?version label required}"
-OUT="${2:-bin/Release/net10.0}"
+OUT="${2:-src/AstraSkins/bin/Release/net10.0}"
 PACKAGE_DIR="${3:-package}"
 PKG="$PACKAGE_DIR/addons/counterstrikesharp"
 PLUG="$PKG/plugins/AstraSkins"
