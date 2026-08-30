@@ -76,9 +76,9 @@ public sealed class ConfigManager
         }
 
         var textSize = config.Menu.TextSize?.Trim().ToLowerInvariant();
-        if (textSize is not ("small" or "medium" or "large"))
+        if (textSize is not ("small" or "small-medium" or "medium" or "large"))
         {
-            throw new InvalidOperationException("Menu.TextSize must be one of: small, medium, large.");
+            throw new InvalidOperationException("Menu.TextSize must be one of: small, small-medium, medium, large.");
         }
 
         config.Menu.TextSize = textSize;

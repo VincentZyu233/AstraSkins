@@ -1,35 +1,39 @@
-# Build output
+# 🏗️ 构建输出
 bin/
 obj/
 
-# Local .NET/NuGet folders created in this workspace
+# 📦 当前工作区生成的本地 .NET/NuGet 目录
 .dotnet/
 .nuget/
 
-# FTP/deploy artifacts are generated locally, not source
+# 🚀 本地生成的 FTP/部署产物（不属于源代码）
 deploy/
 release/
 
-# Local/generated CounterStrikeSharp runtime state
+# 🎮 本地生成的 CounterStrikeSharp 运行时状态
 *.log
 *.sqlite
 *.db
 *.db-shm
 *.db-wal
 
-# Python generator cache
+# 🐍 Python 生成器缓存
 __pycache__/
 *.pyc
 
-# Local test/reference plugin copied during development
+# 🧪 开发期间复制的本地测试/参考插件
 weapons-1.7.8/
 
-# IDE/editor files
+# 🛠️ IDE/编辑器文件
 .vs/
 .vscode/
 *.user
 *.suo
 
-# Release packaging output
+# 📦 发布打包产物
 package/
 *.zip
+
+# 🧹 本地临时文件
+/temp/
+/tmp/

@@ -951,6 +951,7 @@ public sealed class MenuManager
         return _config.Menu.TextSize.Trim().ToLowerInvariant() switch
         {
             "small" => "fontSize-s",
+            "small-medium" => "fontSize-sm",
             "large" => "fontSize-l",
             _ => "fontSize-m"
         };
