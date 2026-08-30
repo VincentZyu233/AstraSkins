@@ -16243,5 +16243,91 @@
         "rarity": "rarity_mythical_weapon"
       }
     ]
+  },
+  {
+    "entityName": "weapon_taser",
+    "displayName": "Zeus x27",
+    "displayNameZh": "宙斯x27电击枪",
+    "category": "taser",
+    "enabled": true,
+    "skins": [
+      {
+        "id": "weapon_taser:1205",
+        "displayName": "Charged Up",
+        "displayNameZh": "充电宝",
+        "paintKit": 1205,
+        "seed": 0,
+        "wear": 0.0001,
+        "legacyModel": false,
+        "enabled": true,
+        "rarity": "rarity_mythical_weapon"
+      },
+      {
+        "id": "weapon_taser:292",
+        "displayName": "Dragon Snore",
+        "displayNameZh": "鼾龙传说",
+        "paintKit": 292,
+        "seed": 0,
+        "wear": 0.0001,
+        "legacyModel": false,
+        "enabled": true,
+        "rarity": "rarity_legendary_weapon"
+      },
+      {
+        "id": "weapon_taser:1382",
+        "displayName": "Earth Mandala",
+        "displayNameZh": "大地曼陀罗",
+        "paintKit": 1382,
+        "seed": 0,
+        "wear": 0.0001,
+        "legacyModel": false,
+        "enabled": true,
+        "rarity": "rarity_rare_weapon"
+      },
+      {
+        "id": "weapon_taser:1268",
+        "displayName": "Electric Blue",
+        "displayNameZh": "电光幽蓝",
+        "paintKit": 1268,
+        "seed": 0,
+        "wear": 0.0001,
+        "legacyModel": false,
+        "enabled": true,
+        "rarity": "rarity_uncommon_weapon"
+      },
+      {
+        "id": "weapon_taser:1172",
+        "displayName": "Olympus",
+        "displayNameZh": "奥林匹斯",
+        "paintKit": 1172,
+        "seed": 0,
+        "wear": 0.0001,
+        "legacyModel": false,
+        "enabled": true,
+        "rarity": "rarity_legendary_weapon"
+      },
+      {
+        "id": "weapon_taser:1297",
+        "displayName": "Swamp DDPAT",
+        "displayNameZh": "沼泽DDPAT",
+        "paintKit": 1297,
+        "seed": 0,
+        "wear": 0.0001,
+        "legacyModel": false,
+        "enabled": true,
+        "rarity": "rarity_common_weapon"
+      },
+      {
+        "id": "weapon_taser:1183",
+        "displayName": "Tosai",
+        "displayNameZh": "当岁鱼",
+        "paintKit": 1183,
+        "seed": 0,
+        "wear": 0.0001,
+        "legacyModel": false,
+        "enabled": true,
+        "rarity": "rarity_mythical_weapon"
+      }
+    ]
   }
 ]

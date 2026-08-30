@@ -26,5 +26,12 @@
     "displayNameZh": "重型武器",
     "order": 40,
     "enabled": true
+  },
+  {
+    "id": "taser",
+    "displayName": "Zeus x27",
+    "displayNameZh": "电击枪",
+    "order": 50,
+    "enabled": true
   }
 ]

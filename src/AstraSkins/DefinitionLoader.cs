@@ -102,7 +102,7 @@ internal sealed class DefinitionValidation
         "weapon_hkp2000", "weapon_usp_silencer", "weapon_m4a1", "weapon_m4a1_silencer", "weapon_m249",
         "weapon_mac10", "weapon_mag7", "weapon_mp5sd", "weapon_mp7", "weapon_mp9", "weapon_negev",
         "weapon_nova", "weapon_p250", "weapon_cz75a", "weapon_p90", "weapon_revolver", "weapon_sawedoff", "weapon_scar20",
-        "weapon_sg556", "weapon_ssg08", "weapon_tec9", "weapon_ump45", "weapon_xm1014"
+        "weapon_sg556", "weapon_ssg08", "weapon_taser", "weapon_tec9", "weapon_ump45", "weapon_xm1014"
     };
 
     private readonly ILogger _logger;

@@ -1756,6 +1756,20 @@ public sealed class SkinManager : IDisposable
             // Only take the player's weapon slot over if the weapon being
             // refreshed is the one actually in their hands.
             var wasActive = IsActiveWeapon(player, oldWeapon);
+
+            // Replacing a Zeus resets its one-shot charge state. Its econ
+            // properties can be updated in place, so preserve the live entity.
+            if (weaponEntity.Equals("weapon_taser", StringComparison.OrdinalIgnoreCase))
+            {
+                ApplyCosmeticToWeapon(player, oldWeapon, skin, isKnife: false, logFailures);
+                if (wasActive)
+                {
+                    RefreshActiveWeapon(player, oldWeapon);
+                }
+
+                return true;
+            }
+
             var oldClip = 0;
             var oldReserve = 0;
             oldClip = Math.Max(0, oldWeapon.Clip1);
@@ -1796,7 +1810,7 @@ public sealed class SkinManager : IDisposable
                     });
                     if (wasActive)
                     {
-                        player.ExecuteClientCommand(IsPistol(weaponEntity) ? "slot2" : "slot1");
+                        player.ExecuteClientCommand(GetWeaponSlotCommand(weaponEntity));
                     }
                 }
                 catch (Exception ex)
@@ -2088,6 +2102,21 @@ public sealed class SkinManager : IDisposable
             "weapon_cz75a" or "weapon_revolver";
     }
 
+    private static string GetWeaponSlotCommand(string weaponName)
+    {
+        if (IsKnife(weaponName))
+        {
+            return "slot3";
+        }
+
+        if (weaponName.Equals("weapon_taser", StringComparison.OrdinalIgnoreCase))
+        {
+            return "slot11";
+        }
+
+        return IsPistol(weaponName) ? "slot2" : "slot1";
+    }
+
     private static string? GetPlayerTeamKey(CCSPlayerController player)
     {
         return player.Team switch
@@ -2289,13 +2318,7 @@ public sealed class SkinManager : IDisposable
             }
 
             var weaponName = ResolveWeaponEntityName(weapon);
-            var slotCommand = IsKnife(weaponName)
-                ? "slot3"
-                : weaponName.Equals("weapon_taser", StringComparison.OrdinalIgnoreCase)
-                    ? "slot5"
-                    : IsPistol(weaponName)
-                        ? "slot2"
-                        : "slot1";
+            var slotCommand = GetWeaponSlotCommand(weaponName);
 
             Server.NextFrame(() =>
             {

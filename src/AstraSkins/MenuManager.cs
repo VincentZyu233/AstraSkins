@@ -9,6 +9,7 @@ namespace AstraSkins;
 
 public sealed class MenuManager
 {
+    private const string TaserEntity = "weapon_taser";
     private readonly SkinManager _skinManager;
     private readonly PluginConfig _config;
     private readonly BilingualText _text;
@@ -292,7 +293,8 @@ public sealed class MenuManager
             ChangeView(current, state, MenuView.Categories, push: true);
         }));
 
-        foreach (var weapon in _skinManager.GetOwnedWeaponDefinitions(player))
+        foreach (var weapon in _skinManager.GetOwnedWeaponDefinitions(player)
+                     .Where(weapon => !weapon.EntityName.Equals(TaserEntity, StringComparison.OrdinalIgnoreCase)))
         {
             var label = $"{visualIndex++}. {BilingualText.Name(weapon.DisplayNameZh, weapon.DisplayName)}";
             options.Add(new MenuOption(label, () =>
@@ -338,6 +340,17 @@ public sealed class MenuManager
             {
                 var current = Utilities.GetPlayerFromSlot(state.Slot);
                 if (current is not null) ChangeView(current, state, MenuView.MusicKits, push: true);
+            }));
+        }
+
+        if (_skinManager.Catalog.WeaponsByEntity.TryGetValue(TaserEntity, out var taser) && taser.Skins.Count > 0)
+        {
+            options.Add(new MenuOption($"{visualIndex++}. {BilingualText.Name(taser.DisplayNameZh, taser.DisplayName)}", () =>
+            {
+                var current = Utilities.GetPlayerFromSlot(state.Slot);
+                if (current is null) return;
+                state.Weapon = taser;
+                ChangeView(current, state, MenuView.WeaponSkins, push: true);
             }));
         }
 

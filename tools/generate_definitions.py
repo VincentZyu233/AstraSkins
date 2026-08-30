@@ -50,6 +50,11 @@ WEAPON_DISPLAY = {
     "weapon_cz75a": ("pistols", "CZ75-Auto"),
     "weapon_revolver": ("pistols", "R8 Revolver"),
     "weapon_tec9": ("pistols", "Tec-9"),
+    "weapon_taser": ("taser", "Zeus x27"),
+}
+
+WEAPON_DISPLAY_ZH = {
+    "weapon_taser": "宙斯x27电击枪",
 }
 
 CATEGORIES = [
@@ -57,6 +62,7 @@ CATEGORIES = [
     {"id": "smgs", "displayName": "SMGs", "displayNameZh": "冲锋枪", "order": 20, "enabled": True},
     {"id": "rifles", "displayName": "Rifles", "displayNameZh": "步枪", "order": 30, "enabled": True},
     {"id": "heavy", "displayName": "Heavy", "displayNameZh": "重型武器", "order": 40, "enabled": True},
+    {"id": "taser", "displayName": "Zeus x27", "displayNameZh": "电击枪", "order": 50, "enabled": True},
 ]
 
 
@@ -613,7 +619,7 @@ def enrich_bilingual(weapons, knives, gloves, agents, api_skins_zh, api_agents_z
     def enrich_containers(containers, identity_key):
         for index, container in enumerate(containers):
             identity = str(container.get(identity_key, ""))
-            chinese = item_names.get(identity) or schema_items.get(identity) or container.get("displayName")
+            chinese = WEAPON_DISPLAY_ZH.get(identity) or item_names.get(identity) or schema_items.get(identity) or container.get("displayName")
             enriched = with_display_name_zh(container, chinese)
             enriched["skins"] = [
                 with_display_name_zh(

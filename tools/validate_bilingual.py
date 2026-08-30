@@ -37,6 +37,18 @@ def load_ref(ref, name):
     return json.loads(raw)
 
 
+def validate_existing_entries_unchanged(current, baseline, name):
+    identity_key = "entityName" if name == "weapons" else "id"
+    current_by_id = {str(entry[identity_key]): entry for entry in current}
+    baseline_by_id = {str(entry[identity_key]): entry for entry in baseline}
+    missing = sorted(set(baseline_by_id) - set(current_by_id))
+    if missing:
+        raise ValueError(f"data/{name}.json removed baseline entries: {missing}")
+    for entry_id, baseline_entry in baseline_by_id.items():
+        if strip_chinese_names(current_by_id[entry_id]) != strip_chinese_names(baseline_entry):
+            raise ValueError(f"data/{name}.json changed stable fields for {entry_id}")
+
+
 def readme_structure(lines):
     result = []
     for line in lines:
@@ -94,8 +106,45 @@ def main():
             total += 1
         if args.baseline_ref:
             baseline = load_ref(args.baseline_ref, name)
-            if baseline is not None and strip_chinese_names(catalogs[name]) != strip_chinese_names(baseline):
-                raise ValueError(f"data/{name}.json changed fields other than displayNameZh")
+            if baseline is not None:
+                validate_existing_entries_unchanged(catalogs[name], baseline, name)
+
+    weapons = catalogs["weapons"]
+    if len(weapons) != 35:
+        raise ValueError(f"expected 35 weapons, found {len(weapons)}")
+    weapon_skin_count = sum(len(weapon.get("skins", [])) for weapon in weapons)
+    if weapon_skin_count != 1456:
+        raise ValueError(f"expected 1456 weapon skins, found {weapon_skin_count}")
+
+    categories = {entry["id"]: entry for entry in catalogs["categories"]}
+    taser_category = categories.get("taser")
+    if taser_category is None or combine(taser_category.get("displayNameZh"), taser_category.get("displayName")) != "电击枪 / Zeus x27":
+        raise ValueError("Zeus x27 category is missing or not bilingual")
+
+    taser = next((weapon for weapon in weapons if weapon["entityName"] == "weapon_taser"), None)
+    if taser is None or taser.get("category") != "taser":
+        raise ValueError("weapon_taser is missing or linked to the wrong category")
+    if combine(taser.get("displayNameZh"), taser.get("displayName")) != "宙斯x27电击枪 / Zeus x27":
+        raise ValueError("weapon_taser name is missing or not bilingual")
+
+    expected_taser_skins = {
+        1205: ("充电宝", "Charged Up"),
+        292: ("鼾龙传说", "Dragon Snore"),
+        1382: ("大地曼陀罗", "Earth Mandala"),
+        1268: ("电光幽蓝", "Electric Blue"),
+        1172: ("奥林匹斯", "Olympus"),
+        1297: ("沼泽DDPAT", "Swamp DDPAT"),
+        1183: ("当岁鱼", "Tosai"),
+    }
+    taser_skins = {skin.get("paintKit"): skin for skin in taser.get("skins", [])}
+    if set(taser_skins) != set(expected_taser_skins):
+        raise ValueError(f"unexpected Zeus x27 paint kits: {sorted(taser_skins)}")
+    for paint_kit, (chinese, english) in expected_taser_skins.items():
+        skin = taser_skins[paint_kit]
+        if (skin.get("displayNameZh"), skin.get("displayName")) != (chinese, english):
+            raise ValueError(f"Zeus x27 paint kit {paint_kit} has an unexpected name")
+        if skin.get("seed") != 0 or skin.get("wear") != 0.0001 or skin.get("legacyModel") is not False:
+            raise ValueError(f"Zeus x27 paint kit {paint_kit} has unexpected defaults")
 
     music_kits = catalogs["music_kits"]
     if len(music_kits) != 92:
@@ -124,6 +173,9 @@ def main():
     ]
     if not any("秋叶原" in value for value in searchable) or not any("akihabara" in value for value in searchable):
         raise ValueError("Chinese/English search index smoke test failed")
+    taser_searchable = [value for value in searchable if "zeus x27" in value or "宙斯x27电击枪" in value]
+    if not any("olympus" in value for value in taser_searchable) or not any("奥林匹斯" in value for value in taser_searchable):
+        raise ValueError("Zeus x27 Chinese/English search index smoke test failed")
 
     source_dir = root / "src" / "AstraSkins"
     sources = "\n".join(path.read_text(encoding="utf-8") for path in source_dir.rglob("*.cs"))
@@ -136,6 +188,16 @@ def main():
         raise ValueError("wide-character-aware menu truncation is not wired")
     if "音乐盒 music music kit" not in menu or "SetMusicKit(current, kitId)" not in menu:
         raise ValueError("music kit Chinese/English search is not wired")
+    if ".Where(weapon => !weapon.EntityName.Equals(TaserEntity" not in menu:
+        raise ValueError("owned Zeus x27 must not duplicate the fixed main-menu entry")
+    if "WeaponsByEntity.TryGetValue(TaserEntity" not in menu:
+        raise ValueError("fixed Zeus x27 main-menu entry is not wired")
+    skin_manager = (source_dir / "SkinManager.cs").read_text(encoding="utf-8")
+    if 'return "slot11";' not in skin_manager:
+        raise ValueError("Zeus x27 must refresh through slot11")
+    plugin = (source_dir / "AstraSkinsPlugin.cs").read_text(encoding="utf-8")
+    if 'ModuleVersion => "1.2.0"' not in plugin:
+        raise ValueError("ModuleVersion must be 1.2.0")
 
     readme_zh = (root / "README.md").read_text(encoding="utf-8").splitlines()
     readme_en = (root / "README.en-us.md").read_text(encoding="utf-8").splitlines()
@@ -145,8 +207,10 @@ def main():
         raise ValueError("README heading, fence, table, blank-line, or language-link structure mismatch")
 
     attributes = (root / ".gitattributes").read_text(encoding="utf-8")
-    if "*.md linguist-detectable=true" not in attributes or "README*.md linguist-language=Markdown" not in attributes:
+    if "*.md linguist-language=Markdown linguist-detectable=true linguist-documentation=false" not in attributes or "README*.md linguist-language=Markdown" not in attributes:
         raise ValueError("both READMEs must be included in GitHub language statistics")
+    if "*.json linguist-language=JSON linguist-detectable=true linguist-vendored=false" not in attributes:
+        raise ValueError("all JSON files must be included in GitHub language statistics")
 
     print(f"Validated {len(FILES)} catalogs, {total} bilingual names, {len(en)} language keys, search, truncation, README parity, fallback, de-duplication, and HTML safety.")
     return 0
