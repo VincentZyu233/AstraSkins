@@ -17,6 +17,8 @@
 
 </div>
 
+![Astra Skins 双语刀具菜单实机预览](docs/images/preview/preview.png)
+
 ---
 
 ## ✨ 功能特性

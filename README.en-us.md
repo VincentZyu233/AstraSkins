@@ -17,6 +17,8 @@
 
 </div>
 
+![Astra Skins bilingual knife menu in game](docs/images/preview/preview.png)
+
 ---
 
 ## ✨ Features
