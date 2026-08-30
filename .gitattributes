@@ -2,6 +2,7 @@
 
 # Include documentation, including README.md, in GitHub Linguist language statistics.
 *.md linguist-detectable=true
+README*.md linguist-language=Markdown linguist-detectable=true linguist-documentation=false
 
 *.dll binary
 *.so binary
