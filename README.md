@@ -165,7 +165,7 @@ StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用�
     "SslMode": "required"
   },
   "Menu": {
-    "TextSize": "medium",
+    "TextSize": "small",
     "ItemsPerPage": 7,
     "TimeoutSeconds": 25,
     "CooldownMilliseconds": 180,

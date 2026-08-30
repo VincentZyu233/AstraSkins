@@ -37,7 +37,7 @@ public sealed class MySqlConfig
 
 public sealed class MenuConfig
 {
-    public string TextSize { get; set; } = "medium";
+    public string TextSize { get; set; } = "small";
     public int ItemsPerPage { get; set; } = 7;
     public int TimeoutSeconds { get; set; } = 25;
     public int CooldownMilliseconds { get; set; } = 180;

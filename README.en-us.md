@@ -165,7 +165,7 @@ If `data/music_kits.json` is missing, the category simply stays hidden.
     "SslMode": "required"
   },
   "Menu": {
-    "TextSize": "medium",
+    "TextSize": "small",
     "ItemsPerPage": 7,
     "TimeoutSeconds": 25,
     "CooldownMilliseconds": 180,
