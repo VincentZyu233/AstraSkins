@@ -6,8 +6,8 @@
 # 📖 明确将各语言 README 识别为 Markdown，并按源代码而非文档类文件计入统计
 README*.md linguist-language=Markdown linguist-detectable=true linguist-documentation=false
 
-# 🧮 将所有 JSON 数据与配置纳入 GitHub Linguist 语言统计，并明确排除 vendored 判定
-*.json linguist-language=JSON linguist-detectable=true linguist-vendored=false
+# 🧮 JSON 主要是大体量饰品数据与配置，不纳入 GitHub Linguist 语言统计
+*.json linguist-detectable=false
 
 # 🧩 将编译后的动态链接库标记为二进制文件，禁止文本差异和换行转换
 *.dll binary

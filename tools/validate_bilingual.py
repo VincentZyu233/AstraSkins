@@ -209,8 +209,8 @@ def main():
     attributes = (root / ".gitattributes").read_text(encoding="utf-8")
     if "*.md linguist-language=Markdown linguist-detectable=true linguist-documentation=false" not in attributes or "README*.md linguist-language=Markdown" not in attributes:
         raise ValueError("both READMEs must be included in GitHub language statistics")
-    if "*.json linguist-language=JSON linguist-detectable=true linguist-vendored=false" not in attributes:
-        raise ValueError("all JSON files must be included in GitHub language statistics")
+    if "*.json linguist-detectable=false" not in attributes:
+        raise ValueError("JSON data files must be excluded from GitHub language statistics")
 
     print(f"Validated {len(FILES)} catalogs, {total} bilingual names, {len(en)} language keys, search, truncation, README parity, fallback, de-duplication, and HTML safety.")
     return 0
