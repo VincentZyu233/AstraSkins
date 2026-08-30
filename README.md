@@ -2,46 +2,48 @@
 
 # Astra Skins
 
-**Weapon skins, knives, gloves, and agents for Counter-Strike 2 — with a built-in WASD menu, per-player customization, and database-backed persistence.**
+[![上游仓库](https://img.shields.io/badge/GitHub-Upstream%20Repository-181717?logo=github&style=for-the-badge)](https://github.com/Ayrton09/AstraSkins)
+
+**为 Counter-Strike 2 提供武器皮肤、刀具、手套和探员，并内置 WASD 菜单、玩家独立自定义和数据库持久化。**
 
 [![CS2](https://img.shields.io/badge/game-Counter--Strike%202-orange)](https://www.counter-strike.net/)
 [![CounterStrikeSharp](https://img.shields.io/badge/CounterStrikeSharp-%E2%89%A5%201.0.369-blue)](https://github.com/roflmuffin/CounterStrikeSharp)
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4)](https://dotnet.microsoft.com/)
 [![CI](https://github.com/Ayrton09/AstraSkins/actions/workflows/ci.yml/badge.svg)](https://github.com/Ayrton09/AstraSkins/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![许可证](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 </div>
 
 ---
 
-## Features
+## 功能特性
 
-- 🎨 **1,400+ weapon skins, 20 knives with 576 finishes, 8 glove types, 63 agents** — all data-driven from JSON, no datasets baked into the code.
-- 🕹️ **Built-in WASD menu** — navigate with `W`/`S`, select with `E`. No external menu plugin required.
-- 🔧 **Per-player customization** — custom paint seed, wear/float, name tags, and StatTrak counters via `!seed`, `!wear`, `!nametag`, and `!stattrak`.
-- 🔎 **Search** — `!ws <text>` finds any skin, knife, glove, or agent without scrolling through pages.
-- 💾 **Persistent selections** — SQLite or MySQL, keyed by SteamID64. Selections survive reconnects, map changes, and restarts.
-- 🌍 **7 languages** — per-player localization (English, Spanish, Chinese, Portuguese, German, French, Russian).
-- 🗣️ **Agent radio voices** — agents keep their voice lines where the CS2 schema exposes the voice data.
-- 🛡️ **Permission gating** — restrict individual skins, knives, gloves, agents, or the whole customization feature to admin flags.
-- ⚙️ **Admin tooling** — hot reload of definitions and a diagnostics command.
+- 🎨 **1,400+ 款武器皮肤、20 种刀具及其 576 款外观、8 种手套、63 名探员** — 全部由 JSON 数据驱动，代码中不内置数据集。
+- 🕹️ **内置 WASD 菜单** — 使用 `W`/`S` 导航，按 `E` 选择，无需外部菜单插件。
+- 🔧 **玩家独立自定义** — 可通过 `!seed`、`!wear`、`!nametag` 和 `!stattrak` 自定义图案模板、磨损度、名称标签及 StatTrak 计数。
+- 🔎 **搜索** — 使用 `!ws <文本>` 即可查找任意皮肤、刀具、手套或探员，无需逐页浏览。
+- 💾 **持久化选择** — 支持 SQLite 或 MySQL，以 SteamID64 为键；重连、换图和重启后选择仍会保留。
+- 🌍 **7 种语言** — 按玩家提供本地化（英语、西班牙语、中文、葡萄牙语、德语、法语、俄语）。
+- 🗣️ **探员无线电语音** — 当 CS2 schema 提供语音数据时，探员会保留其语音台词。
+- 🛡️ **权限控制** — 可将单个皮肤、刀具、手套、探员或整个自定义功能限制为指定管理员权限。
+- ⚙️ **管理工具** — 支持热重载定义和诊断命令。
 
-## Requirements
+## 环境要求
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) `1.0.369` or newer (with Metamod:Source), running on `.NET 10`.
-- SQLite (zero setup) or a MySQL server, selected explicitly in the config.
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) `1.0.369` 或更高版本（配合 Metamod:Source），运行于 `.NET 10`。
+- SQLite（无需配置）或 MySQL 服务器，需在配置中明确选择。
 
-## Installation
+## 安装
 
-1. Install [Metamod:Source](https://www.sourcemm.net/) and [CounterStrikeSharp](https://docs.cssharp.dev/docs/guides/getting-started.html) on your CS2 dedicated server.
-2. **Required:** edit `addons/counterstrikesharp/configs/core.json` and set:
+1. 在 CS2 专用服务器上安装 [Metamod:Source](https://www.sourcemm.net/) 和 [CounterStrikeSharp](https://docs.cssharp.dev/docs/guides/getting-started.html)。
+2. **必需：**编辑 `addons/counterstrikesharp/configs/core.json` 并设置：
 
    ```json
    "FollowCS2ServerGuidelines": false
    ```
 
-   Without this, CounterStrikeSharp blocks the item-property writes this plugin needs and **no skins will apply**.
-3. Copy the plugin files using this layout:
+   若不这样设置，CounterStrikeSharp 会阻止本插件所需的物品属性写入，**任何皮肤都不会生效**。
+3. 按以下目录结构复制插件文件：
 
    ```text
    addons/
@@ -50,87 +52,87 @@
          AstraSkins/
            AstraSkins.dll
            AstraSkins.deps.json
-           data/            ← weapons, knives, gloves, agents, categories JSON
-           lang/            ← translations
-           schema/          ← reference SQL (the plugin creates tables itself)
+           data/            ← 武器、刀具、手套、探员、分类 JSON
+           lang/            ← 翻译文件
+           schema/          ← 参考 SQL（插件会自行建表）
        gamedata/
-         astra_skins.json   ← required, see Gamedata below
+         astra_skins.json   ← 必需，参见下方“游戏数据”
        configs/
          plugins/
            AstraSkins/
              AstraSkins.json
    ```
 
-4. Configure the database in `configs/plugins/AstraSkins/AstraSkins.json` (see [Configuration](#configuration)). SQLite works out of the box; MySQL needs an existing database and user.
-5. Restart the server (or `css_plugins load AstraSkins`). The startup log reports how many skins, knives, gloves, and agents were loaded.
+4. 在 `configs/plugins/AstraSkins/AstraSkins.json` 中配置数据库（参见[配置](#配置)）。SQLite 开箱即用；MySQL 需要预先存在的数据库和用户。
+5. 重启服务器（或执行 `css_plugins load AstraSkins`）。启动日志会报告加载的皮肤、刀具、手套和探员数量。
 
-## Commands
+## 命令
 
-### Players
+### 玩家命令
 
-| Command | Description |
+| 命令 | 说明 |
 | --- | --- |
-| `!ws` | Open the main skins menu |
-| `!ws <search>` | Search every skin, knife, glove, and agent at once |
-| `!knife` | Open the knife menu |
-| `!gloves` | Open the gloves menu |
-| `!agents` | Open the agents menu |
-| `!wsrefresh` | Reapply saved selections |
-| `!wsreset [all\|weapons\|knife\|gloves\|agents]` | Reset saved selections, all or per category |
+| `!ws` | 打开主皮肤菜单 |
+| `!ws <搜索内容>` | 同时搜索所有皮肤、刀具、手套和探员 |
+| `!knife` | 打开刀具菜单 |
+| `!gloves` | 打开手套菜单 |
+| `!agents` | 打开探员菜单 |
+| `!wsrefresh` | 重新应用已保存的选择 |
+| `!wsreset [all\|weapons\|knife\|gloves\|agents]` | 重置全部或指定分类的已保存选择 |
 
-### Customization
+### 自定义
 
-| Command | Description |
+| 命令 | 说明 |
 | --- | --- |
-| `!seed <0-1000>` | Custom paint seed for the held weapon · `!seed gloves <n>` for gloves · `!seed reset` to clear |
-| `!wear <0.00-1.00>` | Custom wear/float for the held weapon · `!wear gloves <n>` for gloves · `!wear reset` to clear |
-| `!nametag <text>` | Name tag for the held weapon · `!nametag reset` to remove |
-| `!stattrak` | Toggle StatTrak on the held weapon · `!stattrak <count>` sets the counter · `!stattrak reset` removes it |
+| `!seed <0-1000>` | 设置手持武器的自定义图案模板 · 使用 `!seed gloves <n>` 设置手套 · 使用 `!seed reset` 清除 |
+| `!wear <0.00-1.00>` | 设置手持武器的自定义磨损度 · 使用 `!wear gloves <n>` 设置手套 · 使用 `!wear reset` 清除 |
+| `!nametag <文本>` | 设置手持武器的名称标签 · 使用 `!nametag reset` 移除 |
+| `!stattrak` | 切换手持武器的 StatTrak · `!stattrak <计数>` 设置计数器 · `!stattrak reset` 移除 |
 
-Overrides apply on top of the selected skin, take effect instantly, and persist in the database. They target the weapon currently held (knife included); pass `gloves` as the first argument to target equipped gloves instead. A skin must be selected for the item first.
+自定义项会叠加在已选皮肤之上，立即生效并持久化到数据库。默认目标是当前手持武器（包括刀具）；将 `gloves` 作为第一个参数即可改为已装备的手套。使用前必须先为该物品选择皮肤。
 
-StatTrak works the same way: enable it on a weapon or knife and the counter goes up with every kill you get with that item, persisting across reconnects and map changes.
+StatTrak 的工作方式相同：在武器或刀具上启用后，每次使用该物品击杀都会增加计数，并在重连和换图后继续保留。
 
-> **Tip:** seeds only change finishes whose pattern placement varies — Case Hardened, Crimson Web, Marble Fade, Fade. Most other skins look identical on every seed.
+> **提示：**图案模板只会改变图案位置可变的外观，例如表面淬火、深红之网、大理石渐变和渐变之色。大多数其他皮肤在不同模板下看起来完全相同。
 
-### Admin
+### 管理员命令
 
-| Command | Default permission | Description |
+| 命令 | 默认权限 | 说明 |
 | --- | --- | --- |
-| `!wsreload` | `@css/config` | Reload the JSON definitions and reapply skins to everyone |
-| `!wsdebug` | `@css/config` | Diagnostics: load counts, database mode, and the caller's selections |
+| `!wsreload` | `@css/config` | 重载 JSON 定义并为所有玩家重新应用皮肤 |
+| `!wsdebug` | `@css/config` | 显示诊断信息：加载数量、数据库模式及调用者的选择 |
 
-Both can be disabled entirely in the config.
+这两个命令都可以在配置中完全禁用。
 
-## Menu Controls
+## 菜单操作
 
-| Key | Action |
+| 按键 | 操作 |
 | --- | --- |
-| `W` / `S` | Move up / down |
-| `E` | Select |
-| `Shift` | Back |
-| `R` | Close |
+| `W` / `S` | 上移 / 下移 |
+| `E` | 选择 |
+| `Shift` | 返回 |
+| `R` | 关闭 |
 
-The menu items are numbered as a visual guide for orientation; navigation is by keys, not numbers. While the menu is open the player is held in place. Heads up: `E` still performs its normal in-world action (open doors, pick up weapons, defuse), so avoid confirming a selection while standing on the bomb.
+菜单项目带有编号，仅作为辨认位置的视觉提示；实际使用按键而非数字导航。菜单打开时玩家会被固定在原地。请注意：`E` 仍会执行游戏世界中的常规动作（开门、拾取武器、拆弹），因此站在炸弹上时不要确认选择。
 
-## Search
+## 搜索
 
-With 1,449 weapon skins alone, scrolling is not always the fastest way in. `!ws <search>` opens a flat result list spanning weapon skins, knife finishes, glove finishes, and agents.
+仅武器皮肤就有 1,449 款，逐页浏览并不总是最快的方式。`!ws <搜索内容>` 会打开一个扁平结果列表，涵盖武器皮肤、刀具外观、手套外观和探员。
 
-Every whitespace-separated term has to appear in the entry, so you can narrow down quickly:
+每个以空格分隔的词都必须出现在条目中，因此可以快速缩小范围：
 
 ```text
-!ws redline        → Redline on every weapon that has it
-!ws ak redline     → straight to the AK-47 Redline
-!ws marble fade    → every Marble Fade knife
-!ws ct mccoy       → the CT agent
+!ws redline        → 所有拥有 Redline 的武器
+!ws ak redline     → 直接找到 AK-47 Redline
+!ws marble fade    → 所有 Marble Fade 刀具
+!ws ct mccoy       → 对应的 CT 探员
 ```
 
-Results respect permissions and are capped at 64 entries; already-equipped items are marked with `*`.
+搜索结果会遵守权限限制，最多显示 64 项；已经装备的物品会以 `*` 标记。
 
-## Configuration
+## 配置
 
-`configs/plugins/AstraSkins/AstraSkins.json` — the defaults are safe to publish and use placeholder credentials:
+`configs/plugins/AstraSkins/AstraSkins.json` — 默认配置可安全公开，并使用占位凭据：
 
 ```json
 {
@@ -173,17 +175,17 @@ Results respect permissions and are capped at 64 entries; already-equipped items
 }
 ```
 
-| Key | What it does |
+| 配置项 | 作用 |
 | --- | --- |
-| `DatabaseMode` | `"sqlite"` or `"mysql"` — required, validated at startup |
-| `Menu.ItemsPerPage` | Visible menu rows (3–6) |
-| `Menu.TimeoutSeconds` | Menu auto-closes after this many idle seconds |
-| `Menu.CooldownMilliseconds` | Minimum delay between menu key presses |
-| `Menu.SelectionCooldownMilliseconds` | Minimum delay between skin selections |
-| `Menu.AllowWhileDead` | Allow opening the menu while dead |
-| `Customization.Enabled` | Master switch for `!seed` / `!wear` / `!nametag` |
-| `Customization.Permission` | Restrict customization to a flag; empty = everyone |
-| `Customization.MaxNameTagLength` | Name tag cap, 4–32 (default 20 matches the real game) |
+| `DatabaseMode` | `"sqlite"` 或 `"mysql"` — 必填，启动时验证 |
+| `Menu.ItemsPerPage` | 可见菜单行数（3–6） |
+| `Menu.TimeoutSeconds` | 菜单空闲多少秒后自动关闭 |
+| `Menu.CooldownMilliseconds` | 菜单按键之间的最短延迟 |
+| `Menu.SelectionCooldownMilliseconds` | 皮肤选择之间的最短延迟 |
+| `Menu.AllowWhileDead` | 是否允许死亡时打开菜单 |
+| `Customization.Enabled` | `!seed` / `!wear` / `!nametag` 的总开关 |
+| `Customization.Permission` | 将自定义限制为某项权限；留空 = 所有人 |
+| `Customization.MaxNameTagLength` | 名称标签长度上限，4–32（默认 20，与游戏实际限制一致） |
 
 ### SQLite
 
@@ -191,7 +193,7 @@ Results respect permissions and are capped at 64 entries; already-equipped items
 { "DatabaseMode": "sqlite", "Sqlite": { "Path": "data/astra_skins.sqlite" } }
 ```
 
-The plugin creates the schema on startup — nothing to install. Note the default path lives inside the plugin folder: **back up the `.sqlite` file before redeploying the plugin directory**, or point `Path` somewhere outside it.
+插件会在启动时创建 schema，无需安装任何内容。请注意，默认路径位于插件目录内部：**重新部署插件目录前请备份 `.sqlite` 文件**，或者将 `Path` 指向目录外部。
 
 ### MySQL
 
@@ -199,66 +201,66 @@ The plugin creates the schema on startup — nothing to install. Note the defaul
 { "DatabaseMode": "mysql", "MySql": { "Host": "…", "Port": 3306, "Database": "astra_skins", "Username": "astra_skins", "Password": "…", "SslMode": "required" } }
 ```
 
-The database and user must already exist; the plugin creates its table on startup. `SslMode` accepts `none`, `preferred`, `required` (default), `verifyca`, or `verifyfull` — keep `required` for remote databases so credentials travel encrypted; use `preferred` or `none` only if your MySQL server has TLS disabled.
+数据库和用户必须预先存在；插件会在启动时创建数据表。`SslMode` 可使用 `none`、`preferred`、`required`（默认）、`verifyca` 或 `verifyfull` — 远程数据库应保持 `required`，确保凭据加密传输；仅当 MySQL 服务器禁用 TLS 时才使用 `preferred` 或 `none`。
 
-## Localization
+## 本地化
 
-Every player-facing message and menu label is localized per player through CounterStrikeSharp's language system. Players pick their language with `css_lang <language>` (e.g. `css_lang es`); missing translations fall back to the server language.
+所有面向玩家的消息和菜单标签都会通过 CounterStrikeSharp 的语言系统按玩家本地化。玩家可使用 `css_lang <语言>` 选择语言（例如 `css_lang es`）；缺失翻译会回退到服务器语言。
 
-Shipped: `en` English · `es` Spanish · `zh` Chinese (Simplified) · `pt` Portuguese · `de` German · `fr` French · `ru` Russian — flat key/value JSON files in `lang/`.
+内置语言：`en` 英语 · `es` 西班牙语 · `zh` 简体中文 · `pt` 葡萄牙语 · `de` 德语 · `fr` 法语 · `ru` 俄语 — 均为 `lang/` 中的扁平键值 JSON 文件。
 
-Wrong or missing translation? PRs welcome — edit the matching `lang/*.json`. To add a language, copy `en.json` to `<culture>.json` and translate the values.
+发现错误或缺失的翻译？欢迎提交 PR — 编辑对应的 `lang/*.json` 即可。若要添加语言，请将 `en.json` 复制为 `<culture>.json` 并翻译其中的值。
 
-## Cosmetic Data
+## 饰品数据
 
-All cosmetic content lives in `data/*.json` and is validated at startup and on `!wsreload` — malformed JSON, duplicate IDs, unknown weapon entities, missing fields, and broken category references are skipped with clear log messages.
+所有饰品内容都位于 `data/*.json`，并在启动及执行 `!wsreload` 时验证；格式错误的 JSON、重复 ID、未知武器实体、缺失字段和损坏的分类引用都会被跳过，并留下清晰的日志消息。
 
-Currently packaged:
+当前打包内容：
 
-| Type | Count |
+| 类型 | 数量 |
 | --- | ---: |
-| Weapons | 34 |
-| Weapon skins | 1,449 |
-| Knives | 20 |
-| Knife skins | 576 |
-| Glove types | 8 |
-| Glove skins | 94 |
-| Agents | 63 |
+| 武器 | 34 |
+| 武器皮肤 | 1,449 |
+| 刀具 | 20 |
+| 刀具皮肤 | 576 |
+| 手套类型 | 8 |
+| 手套皮肤 | 94 |
+| 探员 | 63 |
 
-To regenerate the data after a CS2 update, run the included generator — it pulls the latest `items_game.txt` and translation data automatically:
+若要在 CS2 更新后重新生成数据，请运行内置生成器，它会自动拉取最新的 `items_game.txt` 和翻译数据：
 
 ```bash
 python tools/generate_definitions.py --output data
 ```
 
-## Gamedata
+## 游戏数据
 
-Copy `gamedata/astra_skins.json` to `addons/counterstrikesharp/gamedata/`. It contains the single memory signature used to apply paint attributes visually.
+将 `gamedata/astra_skins.json` 复制到 `addons/counterstrikesharp/gamedata/`。其中包含用于以可视方式应用涂装属性的唯一内存签名。
 
-CS2 updates can break this signature. When that happens the plugin keeps running and logs a clear error instead of crashing — update the signature (or grab an updated release) to restore skin rendering.
+CS2 更新可能导致该签名失效。发生这种情况时，插件会继续运行并记录清晰的错误，而不会崩溃；更新签名（或获取更新后的发行版）即可恢复皮肤渲染。
 
-## Building from Source
+## 从源代码构建
 
 ```bash
 dotnet build -c Release
 ```
 
-Requires the .NET 10 SDK. Deployable output lands in `bin/Release/net10.0/`.
+需要 .NET 10 SDK。可部署输出位于 `bin/Release/net10.0/`。
 
-## Troubleshooting
+## 故障排查
 
-| Symptom | Fix |
+| 症状 | 解决方法 |
 | --- | --- |
-| Skins never apply, no errors | Set `FollowCS2ServerGuidelines: false` in `configs/core.json` and restart |
-| "gamedata signature is missing" in logs | Copy `gamedata/astra_skins.json` to `addons/counterstrikesharp/gamedata/` |
-| Skins stopped working after a CS2 update | The gamedata signature broke — see [Gamedata](#gamedata) |
-| `!wsreload` / `!wsdebug` say no permission | Add your SteamID to `configs/admins.json` with the `@css/config` flag |
-| `!seed` looks like it does nothing | The held skin's pattern doesn't vary by seed — try Case Hardened or Crimson Web |
+| 皮肤始终不生效，且没有错误 | 在 `configs/core.json` 中设置 `FollowCS2ServerGuidelines: false` 并重启 |
+| 日志中出现“gamedata signature is missing” | 将 `gamedata/astra_skins.json` 复制到 `addons/counterstrikesharp/gamedata/` |
+| CS2 更新后皮肤停止工作 | gamedata 签名已失效 — 参见[游戏数据](#游戏数据) |
+| `!wsreload` / `!wsdebug` 提示无权限 | 在 `configs/admins.json` 中添加你的 SteamID，并授予 `@css/config` 权限 |
+| `!seed` 看起来没有效果 | 手持皮肤的图案不会随模板变化 — 请尝试 Case Hardened 或 Crimson Web |
 
-## Disclaimer
+## 免责声明
 
-Server-side skin plugins conflict with Valve's [server guidelines](https://blog.counter-strike.net/index.php/server_guidelines/). Running this on a public server with a GSLT carries a token-ban risk that you accept as the operator. Use at your own discretion.
+服务端皮肤插件与 Valve 的[服务器准则](https://blog.counter-strike.net/index.php/server_guidelines/)存在冲突。在使用 GSLT 的公共服务器上运行本插件会带来令牌被封禁的风险，服务器运营者需自行承担。请谨慎使用。
 
-## License
+## 许可证
 
 [MIT](LICENSE) © Ayrton
