@@ -195,9 +195,23 @@ def main():
     skin_manager = (source_dir / "SkinManager.cs").read_text(encoding="utf-8")
     if 'return "slot11";' not in skin_manager:
         raise ValueError("Zeus x27 must refresh through slot11")
+    taser_refresh_requirements = [
+        'RefreshOwnedTaserWithSelection(player, oldWeapon, skin, wasActive, logFailures)',
+        "pawn.RemovePlayerItem(oldWeapon);",
+        "oldWeapon.Remove();",
+        'GiveNamedItem<CWeaponTaser>("weapon_taser")',
+        "oldTaser.FireTime,",
+        "oldTaser.LastAttackTick,",
+        "oldTaser.NextPrimaryAttackTick,",
+        "NextTaserRefreshGeneration(steamId)",
+        "RestoreTaserState(newTaser, state);",
+    ]
+    missing_taser_refresh = [value for value in taser_refresh_requirements if value not in skin_manager]
+    if missing_taser_refresh:
+        raise ValueError(f"Zeus x27 entity rebuild/state restoration is incomplete: {missing_taser_refresh}")
     plugin = (source_dir / "AstraSkinsPlugin.cs").read_text(encoding="utf-8")
-    if 'ModuleVersion => "1.2.0"' not in plugin:
-        raise ValueError("ModuleVersion must be 1.2.0")
+    if 'ModuleVersion => "1.2.1"' not in plugin:
+        raise ValueError("ModuleVersion must be 1.2.1")
 
     readme_zh = (root / "README.md").read_text(encoding="utf-8").splitlines()
     readme_en = (root / "README.en-us.md").read_text(encoding="utf-8").splitlines()

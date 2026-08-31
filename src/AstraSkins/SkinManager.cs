@@ -24,10 +24,21 @@ public sealed class SkinManager : IDisposable
     private readonly HashSet<ulong> _loadingProfiles = new();
     private readonly HashSet<ulong> _activeSteamIds = new();
     private readonly Dictionary<ulong, ulong> _profileEpochs = new();
+    private readonly Dictionary<ulong, ulong> _taserRefreshGenerations = new();
     private readonly object _storageQueueLock = new();
     private Task _storageQueue = Task.CompletedTask;
     private ulong _nextItemId = MinimumCustomItemId;
     private bool _disposed;
+
+    private readonly record struct TaserState(
+        int Clip,
+        int Reserve,
+        float FireTime,
+        int LastAttackTick,
+        int NextPrimaryAttackTick,
+        float NextPrimaryAttackTickRatio,
+        int NextSecondaryAttackTick,
+        float NextSecondaryAttackTickRatio);
 
     private static readonly Dictionary<int, string> WeaponEntityByDefinitionIndex = new()
     {
@@ -114,6 +125,7 @@ public sealed class SkinManager : IDisposable
         _loadingProfiles.Clear();
         _profiles.Clear();
         _profileEpochs.Clear();
+        _taserRefreshGenerations.Clear();
 
         Task pendingStorageWork;
         lock (_storageQueueLock)
@@ -168,6 +180,7 @@ public sealed class SkinManager : IDisposable
             _loadingProfiles.Remove(steamId);
             _activeSteamIds.Remove(steamId);
             _profileEpochs.Remove(steamId);
+            _taserRefreshGenerations.Remove(steamId);
         }
     }
 
@@ -177,6 +190,7 @@ public sealed class SkinManager : IDisposable
         _loadingProfiles.Remove(steamId64);
         _activeSteamIds.Remove(steamId64);
         _profileEpochs.Remove(steamId64);
+        _taserRefreshGenerations.Remove(steamId64);
     }
 
     public void ApplyToPlayerWhenProfileReady(CCSPlayerController player, bool logFailures = false)
@@ -1757,17 +1771,12 @@ public sealed class SkinManager : IDisposable
             // refreshed is the one actually in their hands.
             var wasActive = IsActiveWeapon(player, oldWeapon);
 
-            // Replacing a Zeus resets its one-shot charge state. Its econ
-            // properties can be updated in place, so preserve the live entity.
+            // Zeus paint changes do not invalidate the client's cached material.
+            // Rebuild the entity while preserving its one-shot state so the new
+            // finish is visible immediately without restoring a spent charge.
             if (weaponEntity.Equals("weapon_taser", StringComparison.OrdinalIgnoreCase))
             {
-                ApplyCosmeticToWeapon(player, oldWeapon, skin, isKnife: false, logFailures);
-                if (wasActive)
-                {
-                    RefreshActiveWeapon(player, oldWeapon);
-                }
-
-                return true;
+                return RefreshOwnedTaserWithSelection(player, oldWeapon, skin, wasActive, logFailures);
             }
 
             var oldClip = 0;
@@ -1831,6 +1840,127 @@ public sealed class SkinManager : IDisposable
             _logger.LogWarning(ex, "Astra Skins failed to refresh weapon {WeaponEntity} for player {SteamId}.", weaponEntity, player.SteamID);
             return false;
         }
+    }
+
+    private bool RefreshOwnedTaserWithSelection(CCSPlayerController player, CBasePlayerWeapon oldWeapon, CosmeticEntry skin, bool wasActive, bool logFailures)
+    {
+        var pawn = player.PlayerPawn.Value;
+        if (pawn is null || !pawn.IsValid)
+        {
+            return false;
+        }
+
+        var steamId = GetSteamId64(player);
+        var pawnIndex = pawn.Index;
+        var refreshGeneration = NextTaserRefreshGeneration(steamId);
+        var oldTaser = oldWeapon.As<CWeaponTaser>();
+        var oldEntityIndex = oldWeapon.Index;
+        var state = new TaserState(
+            oldTaser.Clip1,
+            oldTaser.ReserveAmmo.Length > 0 ? oldTaser.ReserveAmmo[0] : 0,
+            oldTaser.FireTime,
+            oldTaser.LastAttackTick,
+            oldTaser.NextPrimaryAttackTick,
+            oldTaser.NextPrimaryAttackTickRatio,
+            oldTaser.NextSecondaryAttackTick,
+            oldTaser.NextSecondaryAttackTickRatio);
+
+        pawn.RemovePlayerItem(oldWeapon);
+        oldWeapon.Remove();
+
+        var newTaser = player.GiveNamedItem<CWeaponTaser>("weapon_taser");
+        if (newTaser is null)
+        {
+            _logger.LogWarning("Astra Skins could not create replacement weapon_taser for player {SteamId}; retrying next frame.", player.SteamID);
+            Server.NextFrame(() =>
+            {
+                if (!IsCurrentTaserRefresh(player, steamId, pawnIndex, refreshGeneration, skin.Id))
+                {
+                    return;
+                }
+
+                try
+                {
+                    var retryTaser = player.GiveNamedItem<CWeaponTaser>("weapon_taser");
+                    if (retryTaser is null)
+                    {
+                        _logger.LogWarning("Astra Skins could not create replacement weapon_taser for player {SteamId} after retry. The saved selection will apply when the weapon is next acquired.", player.SteamID);
+                        return;
+                    }
+
+                    BeginTaserReplacementCompletion(player, retryTaser, skin, state, wasActive, logFailures, steamId, pawnIndex, refreshGeneration, oldEntityIndex);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Astra Skins failed while retrying weapon_taser replacement for player {SteamId}.", player.SteamID);
+                }
+            });
+            return true;
+        }
+
+        BeginTaserReplacementCompletion(player, newTaser, skin, state, wasActive, logFailures, steamId, pawnIndex, refreshGeneration, oldEntityIndex);
+        return true;
+    }
+
+    private void BeginTaserReplacementCompletion(
+        CCSPlayerController player,
+        CWeaponTaser newTaser,
+        CosmeticEntry skin,
+        TaserState state,
+        bool wasActive,
+        bool logFailures,
+        ulong steamId,
+        uint pawnIndex,
+        ulong refreshGeneration,
+        uint oldEntityIndex)
+    {
+        // Restore server-side firing state immediately so the replacement cannot
+        // be used as a fresh charge during the frame before cosmetic setup.
+        RestoreTaserState(newTaser, state);
+
+        Server.NextFrame(() =>
+        {
+            if (!IsCurrentTaserRefresh(player, newTaser, steamId, pawnIndex, refreshGeneration, skin.Id))
+            {
+                return;
+            }
+
+            try
+            {
+                RestoreTaserState(newTaser, state);
+                ApplyCosmeticToWeapon(player, newTaser, skin, isKnife: false, logFailures, "weapon_taser");
+
+                // GiveNamedItem finishes initializing the taser after this frame.
+                // Restore both the cosmetic and charge state once more after it settles.
+                _scheduleDelayed?.Invoke(0.2f, () =>
+                {
+                    if (IsCurrentTaserRefresh(player, newTaser, steamId, pawnIndex, refreshGeneration, skin.Id))
+                    {
+                        RestoreTaserState(newTaser, state);
+                        ApplyCosmeticToWeapon(player, newTaser, skin, isKnife: false, logFailures: false, "weapon_taser");
+                    }
+                });
+
+                if (wasActive)
+                {
+                    player.ExecuteClientCommand("slot11");
+                }
+
+                if (logFailures)
+                {
+                    _logger.LogInformation(
+                        "Astra Skins rebuilt weapon_taser for player {SteamId} from entity {OldEntityIndex} to {NewEntityIndex}, applied {CosmeticId}, and restored its charge state.",
+                        player.SteamID,
+                        oldEntityIndex,
+                        newTaser.Index,
+                        skin.Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Astra Skins failed to finish weapon_taser replacement for player {SteamId}.", player.SteamID);
+            }
+        });
     }
 
     private bool RefreshOwnedKnifeWithSelection(CCSPlayerController player, CBasePlayerWeapon oldKnife, KnifeDefinition knife, CosmeticEntry? skin, bool logFailures)
@@ -2292,6 +2422,57 @@ public sealed class SkinManager : IDisposable
             weapon.ReserveAmmo[0] = reserve;
             TrySetStateChanged(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
         }
+    }
+
+    private ulong NextTaserRefreshGeneration(ulong steamId)
+    {
+        var generation = _taserRefreshGenerations.TryGetValue(steamId, out var current) && current < ulong.MaxValue
+            ? current + 1
+            : 1;
+        _taserRefreshGenerations[steamId] = generation;
+        return generation;
+    }
+
+    private bool IsCurrentTaserRefresh(CCSPlayerController player, ulong steamId, uint pawnIndex, ulong generation, string cosmeticId)
+    {
+        if (!IsUsablePlayer(player) ||
+            !_taserRefreshGenerations.TryGetValue(steamId, out var currentGeneration) ||
+            currentGeneration != generation ||
+            !TryGetSteamId64(player, out var currentSteamId) ||
+            currentSteamId != steamId)
+        {
+            return false;
+        }
+
+        var pawn = player.PlayerPawn.Value;
+        return pawn is not null &&
+               pawn.IsValid &&
+               pawn.Index == pawnIndex &&
+               _profiles.TryGetValue(steamId, out var profile) &&
+               profile.WeaponSkins.TryGetValue("weapon_taser", out var selectedId) &&
+               selectedId.Equals(cosmeticId, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsCurrentTaserRefresh(CCSPlayerController player, CWeaponTaser taser, ulong steamId, uint pawnIndex, ulong generation, string cosmeticId)
+    {
+        if (!IsCurrentTaserRefresh(player, steamId, pawnIndex, generation, cosmeticId) || !taser.IsValid)
+        {
+            return false;
+        }
+
+        var weapons = player.PlayerPawn.Value?.WeaponServices?.MyWeapons;
+        return weapons is not null && weapons.Any(handle => handle.Value is { IsValid: true } weapon && weapon.Index == taser.Index);
+    }
+
+    private void RestoreTaserState(CWeaponTaser taser, TaserState state)
+    {
+        RestoreAmmo(taser, state.Clip, state.Reserve);
+        taser.FireTime = state.FireTime;
+        taser.LastAttackTick = state.LastAttackTick;
+        taser.NextPrimaryAttackTick = state.NextPrimaryAttackTick;
+        taser.NextPrimaryAttackTickRatio = state.NextPrimaryAttackTickRatio;
+        taser.NextSecondaryAttackTick = state.NextSecondaryAttackTick;
+        taser.NextSecondaryAttackTickRatio = state.NextSecondaryAttackTickRatio;
     }
 
     private void TrySetStateChanged(CBaseEntity entity, string className, string fieldName)
